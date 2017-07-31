@@ -51,12 +51,12 @@ package object spl {
   case class FILEPATTERN(regex: Regex) extends SPL
 
   case class TABLE(name: String, namespace: String, desc: Option[String]) extends SPL
-  case class LINEGRAB() extends SPL
-  case class SETXMLNAMESPACE() extends SPL
-  case class ADDCONTEXT() extends SPL
-  case class MULTILINE() extends SPL
-  case class MULTILINE_BREAK_ON_UNMATCH() extends SPL
-  case class SKIP() extends SPL
+  case class LINEGRAB(regex: Regex) extends SPL
+  case class SETXMLNAMESPACE(urls: Array[String]) extends SPL
+  case class ADDCONTEXT(params: String) extends SPL
+  case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SPL
+  case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SPL
+  case class SKIP(n: Int) extends SPL
   case class OBJECT() extends SPL
 
   trait ICON extends SPL { val icon: Icons }
