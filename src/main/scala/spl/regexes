@@ -29,3 +29,7 @@ private lazy val createtable_r = """CREATE\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 private lazy val insertinto_r = """INSERT\s+INTO\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 private lazy val define_r = """DEFINE\s+(DIMENSION|ASPECT|GROUPING)\s+(\w+)""".r
 private lazy val define_object_r = """DEFINE\s+OBJECT\s+(\w+)""".r
+
+val begins_r = """^BEGINS\s+WITH\s+/(.+?)/$""".r
+val ends_r = """^ENDS\s+WITH\s+/(.+?)/$""".r
+val filepattern_r = """^FILEPATTERN\s+/(.+?)/$""".r

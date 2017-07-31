@@ -14,6 +14,9 @@ case class NAMESPACE(name: String, desc: Option[String], nstype: Option[Namespac
                      isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SPL
 case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
                   align: Option[String], solrmap: Option[String], kafka: Boolean) extends SPL
+case class BEGINS_WITH(regex: String) extends SPL
+case class ENDS_WITH(regex: String) extends SPL
+case class FILEPATTERN(regex: String) extends SPL
 case class ICON1() extends SPL // icon_r
 case class ICON2() extends SPL // icon_nvpair_r
 case class ICON3() extends SPL // icon_nv_unordered_r
@@ -42,10 +45,10 @@ trait RegexMatcher[T <: SPL] extends RegexParsers {
         val source = in.source
         val offset = in.offset
         val start = handleWhiteSpace(source, offset)
-        println(s"source = $source, offset = $offset, start = $start\n\n")
+        //println(s"source = $source, offset = $offset, start = $start\n\n")
         r findPrefixMatchOf source.subSequence(start, source.length) match {
           case Some(matched) =>
-            println(s"matched = $matched")
+            //println(s"matched = $matched")
             Success(matched,
               in.drop(start + matched.end - offset))
           case None =>
@@ -72,8 +75,8 @@ object NamespaceMatcher extends RegexMatcher[NAMESPACE] {
     val nstype = Option(value_list(2)).map(x => NamespaceType.stringToEnum(x))
     val isLock = Option(value_list(3)).isEmpty
     val ref = Option(value_list(4))
-    val isXml = Option(value_list(5)).exists(_ == "XML")
-    val isJson = Option(value_list(5)).exists(_ == "JSON")
+    val isXml = Option(value_list(5)).contains("XML")
+    val isJson = Option(value_list(5)).contains("JSON")
     val isSolr = Option(value_list(6)).isEmpty
     val maxlines = Option(value_list(7)).map(_.toLong)
     NAMESPACE(name, desc, nstype, isLock, ref, isXml, isJson, isSolr, maxlines)
@@ -100,31 +103,69 @@ object ExitMatcher extends RegexMatcher[EXIT.type] {
   override protected val regex: Regex = """\s*;\s*""".r
 }
 
+object BeginsWithMatcher extends RegexMatcher[BEGINS_WITH] {
+  override protected def get(values: String*) = {
+    val value_list = values.toList
+    val regex = value_list.head
+    BEGINS_WITH(regex)
+  }
+
+  override protected val regex: Regex = """^BEGINS\s+WITH\s+/(.+?)/$""".r
+}
+
+object EndsWithMatcher extends RegexMatcher[ENDS_WITH] {
+  override protected def get(values: String*) = {
+    val value_list = values.toList
+    val regex = value_list.head
+    ENDS_WITH(regex)
+  }
+
+  override protected val regex: Regex = """^ENDS\s+WITH\s+/(.+?)/$""".r
+}
+
+object FilePatternMatcher extends RegexMatcher[FILEPATTERN] {
+  override protected def get(values: String*) = {
+    val value_list = values.toList
+    val regex = value_list.head
+    FILEPATTERN(regex)
+  }
+
+  override protected val regex: Regex = """^FILEPATTERN\s+/(.+?)/$""".r
+}
+
+
 object SplLexer extends RegexParsers {
 
   override def skipWhitespace = true
   override val whiteSpace = "[ \t\r\f]+".r
 
   def namespace: Parser[NAMESPACE] = NamespaceMatcher().asInstanceOf[Parser[NAMESPACE]]
-
   def table: Parser[TABLE] = TableMatcher().asInstanceOf[Parser[TABLE]]
-
   def exit: Parser[EXIT.type] = ExitMatcher().asInstanceOf[Parser[EXIT.type]]
 
+  def beginsWith: Parser[BEGINS_WITH] = BeginsWithMatcher().asInstanceOf[Parser[BEGINS_WITH]]
+  def endsWith: Parser[ENDS_WITH] = EndsWithMatcher().asInstanceOf[Parser[ENDS_WITH]]
+  def filepattern: Parser[FILEPATTERN] = FilePatternMatcher().asInstanceOf[Parser[FILEPATTERN]]
+
   def tokens: Parser[List[SPL]] = {
-    phrase(rep1(exit | namespace | table))
+    phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table))
   }
 
   def main(args: Array[String]): Unit = {
-    val code = Source.fromResource("namespace_table.spl").getLines().mkString("\n")
-    println(code)
-    parse(tokens, code) match {
-      case NoSuccess(msg, next) =>
-        println("error: " + msg)
-        Left(SPL_ERROR(msg))
-      case Success(result, next) =>
-        println("success: " + result)
-        Right(result)
+    for {
+      (code, linenum) <- Source.fromResource("namespace_table.spl").getLines().zipWithIndex
+      line = code.trim
+      if(line.nonEmpty)
+    } {
+      //println(code)
+      parse(tokens, code) match {
+        case NoSuccess(msg, next) =>
+          println(Console.RED + s"linenum: #${linenum}, error: " + msg + Console.RESET)
+          Left(SPL_ERROR(msg))
+        case Success(result, next) =>
+          println(Console.GREEN + s"linenum: #${linenum}, success: " + result + Console.RESET)
+          Right(result)
+      }
     }
   }
 }
