@@ -37,22 +37,16 @@ case object EXIT extends SPL
 
 trait RegexMatcher[T <: SPL] extends RegexParsers {
 
-  protected def regexMatch(r: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
+  protected def regexMatch(regex: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
     def apply(in: Input): ParseResult[Regex.Match] = {
       if (in.atEnd) {
-        Failure("string matching regex `" + r + "' expected but end hit", in.rest)
+        Failure(s"string matching regex `$regex' expected but end hit", in.rest)
       } else {
-        val source = in.source
-        val offset = in.offset
-        val start = handleWhiteSpace(source, offset)
-        //println(s"source = $source, offset = $offset, start = $start\n\n")
-        r findPrefixMatchOf source.subSequence(start, source.length) match {
+        regex findPrefixMatchOf in.source match {
           case Some(matched) =>
-            //println(s"matched = $matched")
-            Success(matched,
-              in.drop(start + matched.end - offset))
+            Success(matched, in.drop(in.source.length()))
           case None =>
-            Failure("string matching regex `" + r + "' expected but `" + in.first + "' found", in.drop(start - offset))
+            Failure(s"string matching regex `$regex' expected but `" + in.first + "' found", in.rest)
         }
       }
     }
@@ -133,11 +127,7 @@ object FilePatternMatcher extends RegexMatcher[FILEPATTERN] {
   override protected val regex: Regex = """^FILEPATTERN\s+/(.+?)/$""".r
 }
 
-
 object SplLexer extends RegexParsers {
-
-  override def skipWhitespace = true
-  override val whiteSpace = "[ \t\r\f]+".r
 
   def namespace: Parser[NAMESPACE] = NamespaceMatcher().asInstanceOf[Parser[NAMESPACE]]
   def table: Parser[TABLE] = TableMatcher().asInstanceOf[Parser[TABLE]]
@@ -147,20 +137,17 @@ object SplLexer extends RegexParsers {
   def endsWith: Parser[ENDS_WITH] = EndsWithMatcher().asInstanceOf[Parser[ENDS_WITH]]
   def filepattern: Parser[FILEPATTERN] = FilePatternMatcher().asInstanceOf[Parser[FILEPATTERN]]
 
-  def tokens: Parser[List[SPL]] = {
-    phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table))
-  }
+  def tokens: Parser[List[SPL]] = phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table))
 
   def main(args: Array[String]): Unit = {
     for {
       (code, linenum) <- Source.fromResource("namespace_table.spl").getLines().zipWithIndex
       line = code.trim
-      if(line.nonEmpty)
+      if line.nonEmpty
     } {
-      //println(code)
       parse(tokens, code) match {
         case NoSuccess(msg, next) =>
-          println(Console.RED + s"linenum: #${linenum}, error: " + msg + Console.RESET)
+          println(Console.RED + s"linenum: #${linenum}, error: $msg, line = $line" + Console.RESET)
           Left(SPL_ERROR(msg))
         case Success(result, next) =>
           println(Console.GREEN + s"linenum: #${linenum}, success: " + result + Console.RESET)
