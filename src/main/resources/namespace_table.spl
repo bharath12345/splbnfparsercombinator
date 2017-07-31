@@ -1,0 +1,16 @@
+DEFINE NAMESPACE unparsed DESCRIPTION 'Unparsed' TYPE UNPARSED  SOLR
+FILEPATTERN /$/
+;
+
+DEFINE NAMESPACE ns_output_output1_txt DESCRIPTION 'ns_output_output1_txt' TYPE EVENT LOCK SOLR
+BEGINS WITH /([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),(.*)?/
+FILEPATTERN /output/output1.txt$/
+;
+
+DEFINE TABLE tbl_output_output1_txt NAMESPACE ns_output_output1_txt
+;
+
+DEFINE TABLE unparsed NAMESPACE unparsed
+;
+
+

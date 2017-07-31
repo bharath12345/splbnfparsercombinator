@@ -49,60 +49,65 @@ trait RegexMatcher[T] extends RegexParsers {
 
   protected val regex: Regex
 
-  protected def get(name: String, str2: String, str3: String, str4: String, str5: String, str6: String, str7: String, str8: String, str9: String): T
+  protected def get(values: String*): T
 
   def apply(): Parser[T] = {
-    regexMatch(regex) ^^ { case m => get(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6),
-      m.group(7), m.group(8), m.group(9)) }
+    regexMatch(regex) ^^ { case m => get(m.subgroups: _*) }
   }
+}
+
+object NamespaceMatcher extends RegexMatcher[NAMESPACE] {
+  override protected def get(values: String*) = {
+    val value_list = values.toList
+    val name = value_list.head
+    val desc = Option(value_list(1))
+    val nstype = Option(value_list(2)).map(x => NamespaceType.stringToEnum(x))
+    val isLock = Option(value_list(3)).isEmpty
+    val ref = Option(value_list(4))
+    val isXml = Option(value_list(5)).isEmpty
+    val isJson = Option(value_list(6)).isEmpty
+    val isSolr = Option(value_list(7)).isEmpty
+    val maxlines = Option(value_list(8)).map(_.toLong)
+    NAMESPACE(name, desc, nstype, isLock, ref, isXml, isJson, isSolr, maxlines)
+  }
+
+  override protected val regex: Regex = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""" +
+    """(TYPE\s+\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
+}
+
+object TableMatcher extends RegexMatcher[TABLE] {
+  override protected def get(values: String*) = {
+    val value_list = values.toList
+    val name = value_list.head
+    val ns = value_list(1)
+    val desc = Option(value_list(2))
+    TABLE(name, ns, desc)
+  }
+
+  override protected val regex: Regex = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r
+}
+
+object ExitMacher extends RegexMatcher[EXIT.type] {
+  override protected def get(values: String*) = EXIT
+  override protected val regex: Regex = """\s*;\s*""".r
 }
 
 object SplLexer extends RegexParsers {
 
   override def skipWhitespace = true
-
   override val whiteSpace = "[ \t\r\f]+".r
 
-  /*def table: Parser[TABLE] = {
-    """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r ^^ { name => TABLE(name) }
-  }*/
+  def namespace: Parser[NAMESPACE] = NamespaceMatcher()
 
-  def namespace: Namespace.Parser[NAMESPACE] = Namespace()
+  def table: Parser[TABLE] = TableMatcher()
 
-  object Namespace extends RegexMatcher[NAMESPACE] {
-    def get(name: String, str2: String, str3: String, str4: String, str5: String, str6: String, str7: String, str8: String, str9: String) = {
-      val desc = Option(str2)
-      val nstype = Option(str3).map(x => NamespaceType.stringToEnum(x))
-      val isLock = Option(str4).isEmpty
-      val ref = Option(str5)
-      val isXml = Option(str6).isEmpty
-      val isJson = Option(str7).isEmpty
-      val isSolr = Option(str8).isEmpty
-      val maxlines = Option(str9).map(_.toLong)
-      NAMESPACE(name, desc, nstype, isLock, ref, isXml, isJson, isSolr, maxlines)
-    }
+  def exit: Parser[EXIT.type] = ExitMacher()
 
-    val regex: Regex = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""" +
-      """(TYPE\s+\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
+  def tokens: Parser[List[SPL]] = {
+    phrase(rep1(exit | namespace | table))
   }
 
-  /*def namespace: Parser[NAMESPACE] = {
-    def get(name: String, str2: String, str3: String, str4: String, str5: String, str6: String, str7: String, str8: String, str9: String) = {
-      val desc = Option(str2)
-      val nstype = Option(str3).map(x => NamespaceType.stringToEnum(x))
-      val isLock = Option(str4).isEmpty
-      val ref = Option(str5)
-      val isXml = Option(str6).isEmpty
-      val isJson = Option(str7).isEmpty
-      val isSolr = Option(str8).isEmpty
-      val maxlines = Option(str9).map(_.toLong)
-      NAMESPACE(name, desc, nstype, isLock, ref, isXml, isJson, isSolr, maxlines)
-    }
+  def main(args: Array[String]): Unit = {
 
-    val regex: Regex = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""" +
-      """(TYPE\s+\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
-
-    regexMatch(regex) ^^ { case m => get(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6),
-      m.group(7), m.group(8), m.group(9)) }
-  }*/
+  }
 }
