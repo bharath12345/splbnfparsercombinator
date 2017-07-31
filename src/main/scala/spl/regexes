@@ -4,8 +4,8 @@ private lazy val table_r = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\
 private lazy val column_r = ("""^COLUMN\s+([\w_]+)\s+(\([\w\.\:]+?\)|)\s*\[(.+?)\]\s*(<.+?>|)\s*""" +
     """(AS\s+[\d\w_]+|AS\s+'.+?'|AS\s+'.+?'\s*WITH\s+NAME\s*'.+?'|)\s*(\[[LCR]\]|)""" +
     """\s*(WITH\s+SOLRMAPPING\s+\(.+?\)|)\s*(KAFKA)?""").r
-private lazy val icon_r = """ICON\s+(list\_basic|syslog|apache)""".r
 
+private lazy val icon_r = """ICON\s+(list\_basic|syslog|apache)""".r
 private lazy val icon_nvpair_r = """ICON\s+nvpair_basic\s*(?:/(.*?)/\s*/(.*?)/|)""".r
 private lazy val icon_nv_unordered_r = """ICON\s+nvpair_unordered\s*(?:/(.*?)/\s*|)""".r
 private lazy val icon_xml_r = """ICON xml_basic\s*/\s*(.*)\s*/\s*""".r
