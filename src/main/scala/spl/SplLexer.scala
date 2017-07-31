@@ -2,11 +2,13 @@ package spl
 
 import spl.NamespaceType.NamespaceType
 
+import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
 sealed trait SPL
 
+case class SPL_ERROR(error: String) extends SPL
 case class TABLE(name: String, namespace: String, desc: Option[String]) extends SPL
 case class NAMESPACE(name: String, desc: Option[String], nstype: Option[NamespaceType], isLock: Boolean, ref: Option[String],
                      isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SPL
@@ -30,7 +32,7 @@ case class SKIP() extends SPL
 case class OBJECT() extends SPL
 case object EXIT extends SPL
 
-trait RegexMatcher[T] extends RegexParsers {
+trait RegexMatcher[T <: SPL] extends RegexParsers {
 
   protected def regexMatch(r: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
     def apply(in: Input): ParseResult[Regex.Match] = {
@@ -64,15 +66,15 @@ object NamespaceMatcher extends RegexMatcher[NAMESPACE] {
     val nstype = Option(value_list(2)).map(x => NamespaceType.stringToEnum(x))
     val isLock = Option(value_list(3)).isEmpty
     val ref = Option(value_list(4))
-    val isXml = Option(value_list(5)).isEmpty
-    val isJson = Option(value_list(6)).isEmpty
-    val isSolr = Option(value_list(7)).isEmpty
-    val maxlines = Option(value_list(8)).map(_.toLong)
+    val isXml = Option(value_list(5)).exists(_ == "XML")
+    val isJson = Option(value_list(5)).exists(_ == "JSON")
+    val isSolr = Option(value_list(6)).isEmpty
+    val maxlines = Option(value_list(7)).map(_.toLong)
     NAMESPACE(name, desc, nstype, isLock, ref, isXml, isJson, isSolr, maxlines)
   }
 
-  override protected val regex: Regex = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""" +
-    """(TYPE\s+\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
+  override protected val regex: Regex = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*DESCRIPTION\s+('.+?'|)\s*""" +
+    """TYPE\s+(\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
 }
 
 object TableMatcher extends RegexMatcher[TABLE] {
@@ -87,7 +89,7 @@ object TableMatcher extends RegexMatcher[TABLE] {
   override protected val regex: Regex = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r
 }
 
-object ExitMacher extends RegexMatcher[EXIT.type] {
+object ExitMatcher extends RegexMatcher[EXIT.type] {
   override protected def get(values: String*) = EXIT
   override protected val regex: Regex = """\s*;\s*""".r
 }
@@ -97,17 +99,26 @@ object SplLexer extends RegexParsers {
   override def skipWhitespace = true
   override val whiteSpace = "[ \t\r\f]+".r
 
-  def namespace: Parser[NAMESPACE] = NamespaceMatcher()
+  def namespace: Parser[NAMESPACE] = NamespaceMatcher().asInstanceOf[Parser[NAMESPACE]]
 
-  def table: Parser[TABLE] = TableMatcher()
+  def table: Parser[TABLE] = TableMatcher().asInstanceOf[Parser[TABLE]]
 
-  def exit: Parser[EXIT.type] = ExitMacher()
+  def exit: Parser[EXIT.type] = ExitMatcher().asInstanceOf[Parser[EXIT.type]]
 
   def tokens: Parser[List[SPL]] = {
     phrase(rep1(exit | namespace | table))
   }
 
   def main(args: Array[String]): Unit = {
-
+    val code = Source.fromResource("namespace_table.spl").getLines().mkString("\n")
+    println(code)
+    parse(tokens, code) match {
+      case NoSuccess(msg, next) =>
+        println("error: " + msg)
+        Left(SPL_ERROR(msg))
+      case Success(result, next) =>
+        println("success: " + result)
+        Right(result)
+    }
   }
 }
