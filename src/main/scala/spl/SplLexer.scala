@@ -36,15 +36,21 @@ trait RegexMatcher[T <: SPL] extends RegexParsers {
 
   protected def regexMatch(r: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
     def apply(in: Input): ParseResult[Regex.Match] = {
-      val source = in.source
-      val offset = in.offset
-      val start = handleWhiteSpace(source, offset)
-      r findPrefixMatchOf source.subSequence(start, source.length) match {
-        case Some(matched) =>
-          Success(matched,
-            in.drop(start + matched.end - offset))
-        case None =>
-          Failure("string matching regex `"+r+"' expected but `"+in.first+"' found", in.drop(start - offset))
+      if (in.atEnd) {
+        Failure("string matching regex `" + r + "' expected but end hit", in.rest)
+      } else {
+        val source = in.source
+        val offset = in.offset
+        val start = handleWhiteSpace(source, offset)
+        println(s"source = $source, offset = $offset, start = $start\n\n")
+        r findPrefixMatchOf source.subSequence(start, source.length) match {
+          case Some(matched) =>
+            println(s"matched = $matched")
+            Success(matched,
+              in.drop(start + matched.end - offset))
+          case None =>
+            Failure("string matching regex `" + r + "' expected but `" + in.first + "' found", in.drop(start - offset))
+        }
       }
     }
   }
