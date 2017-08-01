@@ -1,6 +1,11 @@
 private[parser] lazy val namespace_r = ("""^DEFINE\s+NAMESPACE\s+([\w\._\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""" +
     """(TYPE\s+\w+|)\s*(LOCK|)\s*(REF\s+[\w_\.]+|)\s*(XML|JSON|)\s*(SOLR)?\s*(\d+)?""").r
+val begins_r = """^BEGINS\s+WITH\s+/(.+?)/$""".r
+val ends_r = """^ENDS\s+WITH\s+/(.+?)/$""".r
+val filepattern_r = """^FILEPATTERN\s+/(.+?)/$""".r
+
 private lazy val table_r = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r
+
 private lazy val column_r = ("""^COLUMN\s+([\w_]+)\s+(\([\w\.\:]+?\)|)\s*\[(.+?)\]\s*(<.+?>|)\s*""" +
     """(AS\s+[\d\w_]+|AS\s+'.+?'|AS\s+'.+?'\s*WITH\s+NAME\s*'.+?'|)\s*(\[[LCR]\]|)""" +
     """\s*(WITH\s+SOLRMAPPING\s+\(.+?\)|)\s*(KAFKA)?""").r
@@ -28,8 +33,9 @@ private lazy val skip_r = """SKIP\s+(\d+)""".r
 private lazy val createtable_r = """CREATE\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 private lazy val insertinto_r = """INSERT\s+INTO\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 private lazy val define_r = """DEFINE\s+(DIMENSION|ASPECT|GROUPING)\s+(\w+)""".r
-private lazy val define_object_r = """DEFINE\s+OBJECT\s+(\w+)""".r
 
-val begins_r = """^BEGINS\s+WITH\s+/(.+?)/$""".r
-val ends_r = """^ENDS\s+WITH\s+/(.+?)/$""".r
-val filepattern_r = """^FILEPATTERN\s+/(.+?)/$""".r
+private lazy val define_object_r = """DEFINE\s+OBJECT\s+(\w+)""".r
+val label_r = """LABEL\s+\'(.+?)\'""".r
+val key_r = """KEY\s+\((.+?)\)""".r
+val parent_r = """PARENT\s+\((.*)\)""".r
+

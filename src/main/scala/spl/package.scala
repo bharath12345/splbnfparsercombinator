@@ -57,7 +57,11 @@ package object spl {
   case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SPL
   case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SPL
   case class SKIP(n: Int) extends SPL
-  case class OBJECT() extends SPL
+
+  case class OBJECT(name: String) extends SPL
+  case class LABEL(label: String) extends SPL
+  case class KEY(keys: Set[String]) extends SPL
+  case class PARENT(parents: Set[String]) extends SPL
 
   trait ICON extends SPL { val icon: Icons }
   case class ICON1(icon: Icons) extends ICON // icon_r

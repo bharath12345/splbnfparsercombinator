@@ -35,8 +35,14 @@ object SplLexer extends RegexParsers {
   val multilineBreakOnUnmatch: Parser[MULTILINE_BREAK_ON_UNMATCH] = MultilineBreakOnUnmatch().asInstanceOf[Parser[MULTILINE_BREAK_ON_UNMATCH]]
   val skip: Parser[SKIP] = Skip().asInstanceOf[Parser[SKIP]]
 
+  val objectM: Parser[OBJECT] = ObjectMatcher().asInstanceOf[Parser[OBJECT]]
+  val label: Parser[LABEL] = LabelMatcher().asInstanceOf[Parser[LABEL]]
+  val key: Parser[KEY] = KeyMatcher().asInstanceOf[Parser[KEY]]
+  val parent: Parser[PARENT] = ParentMatcher().asInstanceOf[Parser[PARENT]]
+
   val tokens: Parser[List[SPL]] = phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table | icon1 | icon2 |
-    icon3 | icon4 | icon5 | icon6 | icon8 | icon9 | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch | skip))
+    icon3 | icon4 | icon5 | icon6 | icon8 | icon9 | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch |
+    skip | objectM | label | key | parent))
 
   def main(args: Array[String]): Unit = {
     for {

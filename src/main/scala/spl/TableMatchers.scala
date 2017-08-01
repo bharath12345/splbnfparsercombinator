@@ -17,6 +17,25 @@ object TableMatcher extends RegexMatcher[TABLE] {
   override protected val regex: Regex = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r
 }
 
+object ColumnMatcher extends RegexMatcher[COLUMN] {
+  override protected val regex: Regex = ("""^COLUMN\s+([\w_]+)\s+(\([\w\.\:]+?\)|)\s*\[(.+?)\]\s*(<.+?>|)\s*""" +
+    """(AS\s+[\d\w_]+|AS\s+'.+?'|AS\s+'.+?'\s*WITH\s+NAME\s*'.+?'|)\s*(\[[LCR]\]|)""" +
+    """\s*(WITH\s+SOLRMAPPING\s+\(.+?\)|)\s*(KAFKA)?""").r
+
+  override protected def get(values: String*): COLUMN = {
+    val value_list = values.toList
+    val name: String = value_list.head
+    val aspect: Option[String] = Option(value_list(1))
+    val ddl: Option[String] = Option(value_list(2))
+    val attribs: String = value_list(3)
+    val as: Option[String] = Option(value_list(4))
+    val align: Option[String] = Option(value_list(5))
+    val solrmap: Option[String] = Option(value_list(6))
+    val kafka: Boolean = value_list(7) == "KAFKA"
+    COLUMN(name, aspect, ddl, attribs, as, align, solrmap, kafka)
+  }
+}
+
 object Linegrab extends RegexMatcher[LINEGRAB] {
   override protected val regex: Regex = """LINEGRAB\s+/(.*?)/$""".r
 
