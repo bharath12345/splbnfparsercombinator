@@ -1,7 +1,5 @@
-package spl
+package spl.lexer
 
-import scala.collection.Iterator
-import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
@@ -41,11 +39,11 @@ object SplLexer extends RegexParsers {
   private val key: Parser[KEY] = KeyMatcher().asInstanceOf[Parser[KEY]]
   private val parent: Parser[PARENT] = ParentMatcher().asInstanceOf[Parser[PARENT]]
 
-  private val tokens: Parser[List[SPL]] = phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table | icon1 | icon2 |
+  private val tokens: Parser[List[SplToken]] = phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | table | icon1 | icon2 |
     icon3 | icon4 | icon5 | icon6 | icon8 | icon9 | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch |
     skip | objectM | label | key | parent))
 
-  def apply(line: String, linenum: Int): Either[SPL_ERROR, List[SPL]] = {
+  def apply(line: String, linenum: Int): Either[SPL_ERROR, List[SplToken]] = {
     //println(s"line = $line")
     parse(tokens, line) match {
       case NoSuccess(msg, next) =>

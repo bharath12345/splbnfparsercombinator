@@ -1,4 +1,4 @@
-package spl
+package spl.lexer
 
 import scala.util.matching.Regex
 

@@ -1,12 +1,14 @@
-import spl.Icons.Icons
-import spl.NamespaceType.NamespaceType
+package spl
+
+import spl.lexer.Icons.Icons
+import spl.lexer.NamespaceType.NamespaceType
 
 import scala.util.matching.Regex
 
 /**
   * Created by bharadwaj on 30/07/17.
   */
-package object spl {
+package object lexer {
 
   object NamespaceType extends Enumeration {
     type NamespaceType = Value
@@ -37,33 +39,33 @@ package object spl {
     val LIST_BASIC, NVPAIR_BASIC, NVPAIR_UNORDERED, ALIGNED_BASIC, XML_BASIC, JSON, CSV_NOHEADER, SYSLOG, APACHE, CSV_WITHHEADER = Value
   }
 
-  sealed trait SPL
+  sealed trait SplToken
 
-  case class SPL_ERROR(error: String) extends SPL
-  case object EXIT extends SPL
+  case class SPL_ERROR(error: String) extends SplToken
+  case object EXIT extends SplToken
 
   case class NAMESPACE(name: String, desc: Option[String], nstype: Option[NamespaceType], isLock: Boolean, ref: Option[String],
-                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SPL
+                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplToken
   case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
-                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SPL
-  case class BEGINS_WITH(regex: Regex) extends SPL
-  case class ENDS_WITH(regex: Regex) extends SPL
-  case class FILEPATTERN(regex: Regex) extends SPL
+                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplToken
+  case class BEGINS_WITH(regex: Regex) extends SplToken
+  case class ENDS_WITH(regex: Regex) extends SplToken
+  case class FILEPATTERN(regex: Regex) extends SplToken
 
-  case class TABLE(name: String, namespace: String, desc: Option[String]) extends SPL
-  case class LINEGRAB(regex: Regex) extends SPL
-  case class SETXMLNAMESPACE(urls: Array[String]) extends SPL
-  case class ADDCONTEXT(params: String) extends SPL
-  case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SPL
-  case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SPL
-  case class SKIP(n: Int) extends SPL
+  case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplToken
+  case class LINEGRAB(regex: Regex) extends SplToken
+  case class SETXMLNAMESPACE(urls: Array[String]) extends SplToken
+  case class ADDCONTEXT(params: String) extends SplToken
+  case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SplToken
+  case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SplToken
+  case class SKIP(n: Int) extends SplToken
 
-  case class OBJECT(name: String) extends SPL
-  case class LABEL(label: String) extends SPL
-  case class KEY(keys: Set[String]) extends SPL
-  case class PARENT(parents: Set[String]) extends SPL
+  case class OBJECT(name: String) extends SplToken
+  case class LABEL(label: String) extends SplToken
+  case class KEY(keys: Set[String]) extends SplToken
+  case class PARENT(parents: Set[String]) extends SplToken
 
-  trait ICON extends SPL { val icon: Icons }
+  trait ICON extends SplToken { val icon: Icons }
   case class ICON1(icon: Icons) extends ICON // icon_r
   case class ICON2(icon: Icons, separator: Regex, delimiter: Regex) extends ICON // icon_nvpair_r
   case class ICON3(icon: Icons, key: Regex) extends ICON // icon_nv_unordered_r

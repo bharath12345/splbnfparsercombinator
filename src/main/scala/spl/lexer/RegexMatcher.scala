@@ -1,4 +1,4 @@
-package spl
+package spl.lexer
 
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
@@ -6,7 +6,7 @@ import scala.util.parsing.combinator.RegexParsers
 /**
   * Created by bharadwaj on 31/07/17.
   */
-trait RegexMatcher[T <: SPL] extends RegexParsers {
+trait RegexMatcher[T <: SplToken] extends RegexParsers {
 
   protected def regexMatch(regex: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
     def apply(in: Input): ParseResult[Regex.Match] = {
