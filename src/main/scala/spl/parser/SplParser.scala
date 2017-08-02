@@ -20,24 +20,29 @@ object SplPC extends App {
 
   println(s"tokens = $tokens")
 
-  //val ast: SplAST = SplParser(tokens)
   val ast = SplParser(tokens)
   println(s"ast = $ast")
 }
 
 object SplParser extends Parsers {
 
-  def apply(tokens: List[SplToken]): List[List[SplToken]] = {
-    @tailrec def loop(t: List[SplToken], acc: List[List[SplToken]]): List[List[SplToken]] = {
-      val (y: List[SplToken], z: List[SplToken]) = t.span(_ != EXIT)
-      println(s"y = $y, z = $z")
-      if(z.contains(EXIT)) {
-        loop(z.tail, y :: acc)
-      } else {
-        acc
-      }
-    }
-    loop(tokens, List())
+  type ListOfLists = List[List[SplToken]]
+
+  def apply(tokens: List[SplToken]): SplTopLevel = {
+    val splTokenList: ListOfLists = loop(tokens, List())
+    buildAST(splTokenList)
+  }
+
+  @tailrec
+  private def loop(t: List[SplToken], acc: ListOfLists): ListOfLists = {
+    val (y: List[SplToken], z: List[SplToken]) = t.span(_ != EXIT)
+    println(s"y = $y, z = $z")
+    if(z.contains(EXIT)) loop(z.tail, y :: acc)
+    else acc
+  }
+
+  private def buildAST(splTokenList: ListOfLists): SplTopLevel = {
+    null
   }
 
 }
