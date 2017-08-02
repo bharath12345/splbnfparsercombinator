@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{EXIT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken}
+import spl.lexer.{EXIT, NAMESPACE, OBJECT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, TABLE}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -28,26 +28,37 @@ object SplPC extends App {
 object SplParser extends Parsers {
 
   def apply(tokens: SplTokenList): SplTopLevel = {
-    val listOfTokenSets: ListOfSplTokenSets = loop(tokens)
-    validateAndMap(listOfTokenSets)
-    buildAST(listOfTokenSets)
+    val listOfTokenSets: ListOfSplTokenSets = getListOfSplTokenSets(tokens)
+    println(s"listOfTokenSets = $listOfTokenSets")
+    val tokenMap: SplTokenMap = validateAndMap(listOfTokenSets)
+    println(s"tokenMap = $tokenMap")
+    buildAST(tokenMap)
   }
 
   @tailrec
-  private def loop(t: SplTokenList, acc: ListOfSplTokenSets = List()): ListOfSplTokenSets = {
+  private def getListOfSplTokenSets(t: SplTokenList, acc: ListOfSplTokenSets = List()): ListOfSplTokenSets = {
     val (y: SplTokenList, z: SplTokenList) = t.span(_ != EXIT)
-    println(s"y = $y, z = $z")
-    if(z.contains(EXIT)) loop(z.tail, y.toSet :: acc)
-    else acc
+    //println(s"y = $y, z = $z")
+    if(z.contains(EXIT)) getListOfSplTokenSets(z.tail, y.toSet :: acc)
+    else acc.filterNot(_.isEmpty)
   }
 
-  private def validateTokenSet(tokenSet: Set[SplToken]): TokenSetType = {
+  private def validateTokenSet(tokenSet: Set[SplToken]): (TokenSetType, String) = {
     def getType(token: SplToken): TokenSetType = {
       token match {
-        case ns: SplNamespaceToken => TokenSetType.Namespace
-        case tb: SplTableToken => TokenSetType.Table
-        case ob: SplObjectToken => TokenSetType.Object
+        case _: SplNamespaceToken => TokenSetType.Namespace
+        case _: SplTableToken => TokenSetType.Table
+        case _: SplObjectToken => TokenSetType.Object
         case _ => throw new Exception(s"Unknown type for token = ${token}")
+      }
+    }
+
+    def getName(token: SplToken): String = {
+      token match {
+        case ns: NAMESPACE => ns.name
+        case tb: TABLE => tb.name
+        case ob: OBJECT => ob.name
+        case _ => throw new Exception(s"head token not a Namespace or Table or Object = $token")
       }
     }
 
@@ -57,16 +68,39 @@ object SplParser extends Parsers {
       if(tokenType != headType)
         throw new Exception(s"Inconsistent token type in set = ${tokenSet}")
     }
-    headType
+    (headType, getName(tokenSet.head))
   }
 
-  private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): Map[TokenSetType, Set[SplToken]] = {
-    listOfTokenSets.map { splTokenSet: Set[SplToken] =>
-      (validateTokenSet(splTokenSet), splTokenSet)
-    }.toMap
+  private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): SplTokenMap = {
+
+    def loop(listOfTokenSets: ListOfSplTokenSets, acc: SplTokenMap = Map()): SplTokenMap = {
+      val head = listOfTokenSets.head
+      val (tokenType: TokenSetType, tokenName: String) = validateTokenSet(head)
+
+      def inner(newNamedSet: Map[String, Set[SplToken]]) = {
+        val newacc = acc + (tokenType -> newNamedSet)
+        if(listOfTokenSets.tail.nonEmpty) loop(listOfTokenSets.tail, newacc)
+        else newacc
+      }
+
+      acc.get(tokenType) match {
+        case None =>
+          inner(Map(tokenName -> head))
+
+        case Some(namedTokenSet) =>
+          namedTokenSet.get(tokenName) match {
+            case Some(_) =>
+              throw new Exception(s"two spl tokens of same type = $tokenType and name = $tokenName found")
+            case None =>
+              inner(namedTokenSet + (tokenName -> head))
+          }
+      }
+    }
+
+    loop(listOfTokenSets)
   }
 
-  private def buildAST(splTokenList: ListOfSplTokenSets): SplTopLevel = {
+  private def buildAST(tokenMap: SplTokenMap): SplTopLevel = {
     null
   }
 

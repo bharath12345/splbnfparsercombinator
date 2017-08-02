@@ -1,6 +1,7 @@
 package spl
 
 import spl.lexer._
+import spl.parser.TokenSetType.TokenSetType
 
 /**
   * Created by bharadwaj on 31/07/17.
@@ -9,6 +10,7 @@ package object parser {
 
   type ListOfSplTokenSets = List[Set[SplToken]]
   type SplTokenList = List[SplToken]
+  type SplTokenMap = Map[TokenSetType, Map[String, Set[SplToken]]]
 
   // two rules in the AST :
   // 1. table can be contained only in a namespace
@@ -27,7 +29,7 @@ package object parser {
 
   case class ObjectAST(obj: OBJECT, label: LABEL, key: KEY, parent: PARENT) extends SplAST
 
-  private[parser] object TokenSetType extends Enumeration {
+  object TokenSetType extends Enumeration {
     type TokenSetType = Value
     val Namespace, Table, Object = Value
   }
