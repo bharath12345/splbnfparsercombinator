@@ -7,6 +7,9 @@ import spl.lexer._
   */
 package object parser {
 
+  type ListOfSplTokenSets = List[Set[SplToken]]
+  type SplTokenList = List[SplToken]
+
   // two rules in the AST :
   // 1. table can be contained only in a namespace
   // 2. one namespace can contain another; and this can be infinitely deep
@@ -23,4 +26,9 @@ package object parser {
                       multilineBOU: Option[MULTILINE_BREAK_ON_UNMATCH], skip: SKIP) extends SplAST
 
   case class ObjectAST(obj: OBJECT, label: LABEL, key: KEY, parent: PARENT) extends SplAST
+
+  private[parser] object TokenSetType extends Enumeration {
+    type TokenSetType = Value
+    val Namespace, Table, Object = Value
+  }
 }

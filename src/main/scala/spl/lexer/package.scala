@@ -42,31 +42,29 @@ package object lexer {
 
   sealed trait SplToken
 
-  case class SPL_ERROR(error: String, linenum: Int) extends SplToken
-  case object EXIT extends SplToken
+  sealed trait SplSpecialToken extends SplToken
+  case class SPL_ERROR(error: String, linenum: Int) extends SplSpecialToken
+  case object EXIT extends SplSpecialToken
 
+  sealed trait SplNamespaceToken extends SplToken
   case class NAMESPACE(name: String, desc: Option[String], nstype: Option[NamespaceType], isLock: Boolean, ref: Option[String],
-                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplToken
-  case class BEGINS_WITH(regex: Regex) extends SplToken
-  case class ENDS_WITH(regex: Regex) extends SplToken
-  case class FILEPATTERN(regex: Regex) extends SplToken
+                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplNamespaceToken
+  case class BEGINS_WITH(regex: Regex) extends SplNamespaceToken
+  case class ENDS_WITH(regex: Regex) extends SplNamespaceToken
+  case class FILEPATTERN(regex: Regex) extends SplNamespaceToken
 
-  case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplToken
+  sealed trait SplTableToken extends SplToken
+  case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplTableToken
   case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
-                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplToken
-  case class LINEGRAB(regex: Regex) extends SplToken
-  case class SETXMLNAMESPACE(urls: Array[String]) extends SplToken
-  case class ADDCONTEXT(params: String) extends SplToken
-  case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SplToken
-  case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SplToken
-  case class SKIP(n: Int) extends SplToken
+                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplTableToken
+  case class LINEGRAB(regex: Regex) extends SplTableToken
+  case class SETXMLNAMESPACE(urls: Array[String]) extends SplTableToken
+  case class ADDCONTEXT(params: String) extends SplTableToken
+  case class MULTILINE(not: Boolean, pat: Regex, sub: String) extends SplTableToken
+  case class MULTILINE_BREAK_ON_UNMATCH(pat: Regex, sub: String) extends SplTableToken
+  case class SKIP(n: Int) extends SplTableToken
 
-  case class OBJECT(name: String) extends SplToken
-  case class LABEL(label: String) extends SplToken
-  case class KEY(keys: Set[String]) extends SplToken
-  case class PARENT(parents: Set[String]) extends SplToken
-
-  trait ICON extends SplToken { val icon: Icons }
+  sealed trait ICON extends SplTableToken { val icon: Icons }
   case class ICON1(icon: Icons) extends ICON // icon_r
   case class ICON2(icon: Icons, separator: Regex, delimiter: Regex) extends ICON // icon_nvpair_r
   case class ICON3(icon: Icons, key: Regex) extends ICON // icon_nv_unordered_r
@@ -76,5 +74,11 @@ package object lexer {
   case class ICON7(icon: Icons) extends ICON // multi_table_align_r
   case class ICON8(icon: Icons, logformat: String) extends ICON // icon_apache_r
   case class ICON9(icon: Icons, csvType: String, sep: String) extends ICON // icon_csv_r
+
+  sealed trait SplObjectToken extends SplToken
+  case class OBJECT(name: String) extends SplObjectToken
+  case class LABEL(label: String) extends SplObjectToken
+  case class KEY(keys: Set[String]) extends SplObjectToken
+  case class PARENT(parents: Set[String]) extends SplObjectToken
 
 }
