@@ -1,40 +1,43 @@
 package spl.parser
 
-import spl.lexer.{SplLexer, SplToken}
+import spl.lexer.{EXIT, SplLexer, SplToken}
 
+import scala.annotation.tailrec
 import scala.io.Source
 import scala.util.parsing.combinator.Parsers
-import scala.util.parsing.input.{NoPosition, Position, Reader}
 
 /**
   * Created by bharadwaj on 31/07/17.
   */
 object SplPC extends App {
-  for {
+  val tokens: List[SplToken] = (for {
     (code, linenum) <- Source.fromResource("namespace_table.spl").getLines().zipWithIndex
     line = code.trim
     if line.nonEmpty
-  } {
-    SplLexer(line, linenum)
-  }
+  } yield {
+    SplLexer(line, linenum).right.get
+  }).toList
+
+  println(s"tokens = $tokens")
+
+  //val ast: SplAST = SplParser(tokens)
+  val ast = SplParser(tokens)
+  println(s"ast = $ast")
 }
 
 object SplParser extends Parsers {
 
-  override type Elem = SplToken
-
-  class SplTokenReader(tokens: Seq[SplToken]) extends Reader[SplToken] {
-    override def first: SplToken = tokens.head
-    override def atEnd: Boolean = tokens.isEmpty
-    override def pos: Position = tokens.headOption.map(_.pos).getOrElse(NoPosition)
-    override def rest: Reader[SplToken] = new SplTokenReader(tokens.tail)
-  }
-
-  def apply(tokens: Seq[SplToken]): Either[SplParserError, SplAST] = {
-    val reader = new SplTokenReader(tokens)
-    program(reader) match {
-      case NoSuccess(msg, next) => Left(SplParserError(Location(next.pos.line, next.pos.column), msg))
-      case Success(result, next) => Right(result)
+  def apply(tokens: List[SplToken]): List[List[SplToken]] = {
+    @tailrec def loop(t: List[SplToken], acc: List[List[SplToken]]): List[List[SplToken]] = {
+      val (y: List[SplToken], z: List[SplToken]) = t.span(_ != EXIT)
+      println(s"y = $y, z = $z")
+      if(z.contains(EXIT)) {
+        loop(z.tail, y :: acc)
+      } else {
+        acc
+      }
     }
+    loop(tokens, List())
   }
+
 }

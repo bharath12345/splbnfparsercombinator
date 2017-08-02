@@ -4,6 +4,7 @@ import spl.lexer.Icons.Icons
 import spl.lexer.NamespaceType.NamespaceType
 
 import scala.util.matching.Regex
+import scala.util.parsing.input.Positional
 
 /**
   * Created by bharadwaj on 30/07/17.
@@ -41,18 +42,18 @@ package object lexer {
 
   sealed trait SplToken
 
-  case class SPL_ERROR(error: String) extends SplToken
+  case class SPL_ERROR(error: String, linenum: Int) extends SplToken
   case object EXIT extends SplToken
 
   case class NAMESPACE(name: String, desc: Option[String], nstype: Option[NamespaceType], isLock: Boolean, ref: Option[String],
                        isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplToken
-  case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
-                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplToken
   case class BEGINS_WITH(regex: Regex) extends SplToken
   case class ENDS_WITH(regex: Regex) extends SplToken
   case class FILEPATTERN(regex: Regex) extends SplToken
 
   case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplToken
+  case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
+                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplToken
   case class LINEGRAB(regex: Regex) extends SplToken
   case class SETXMLNAMESPACE(urls: Array[String]) extends SplToken
   case class ADDCONTEXT(params: String) extends SplToken

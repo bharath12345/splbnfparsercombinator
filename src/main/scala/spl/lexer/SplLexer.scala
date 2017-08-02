@@ -10,10 +10,9 @@ object ExitMatcher extends RegexMatcher[EXIT.type] {
 
 object SplLexer extends RegexParsers {
 
-  private val namespace: Parser[NAMESPACE] = NamespaceMatcher().asInstanceOf[Parser[NAMESPACE]]
-  private val table: Parser[TABLE] = TableMatcher().asInstanceOf[Parser[TABLE]]
   private val exit: Parser[EXIT.type] = ExitMatcher().asInstanceOf[Parser[EXIT.type]]
 
+  private val namespace: Parser[NAMESPACE] = NamespaceMatcher().asInstanceOf[Parser[NAMESPACE]]
   private val beginsWith: Parser[BEGINS_WITH] = BeginsWithMatcher().asInstanceOf[Parser[BEGINS_WITH]]
   private val endsWith: Parser[ENDS_WITH] = EndsWithMatcher().asInstanceOf[Parser[ENDS_WITH]]
   private val filepattern: Parser[FILEPATTERN] = FilePatternMatcher().asInstanceOf[Parser[FILEPATTERN]]
@@ -27,6 +26,7 @@ object SplLexer extends RegexParsers {
   private val icon8: Parser[ICON8] = Icon1Matcher().asInstanceOf[Parser[ICON8]]
   private val icon9: Parser[ICON9] = Icon1Matcher().asInstanceOf[Parser[ICON9]]
 
+  private val table: Parser[TABLE] = TableMatcher().asInstanceOf[Parser[TABLE]]
   private val linegrab: Parser[LINEGRAB] = Linegrab().asInstanceOf[Parser[LINEGRAB]]
   private val setXmlNamespace: Parser[SETXMLNAMESPACE] = SetXmlNamespace().asInstanceOf[Parser[SETXMLNAMESPACE]]
   private val addContext: Parser[ADDCONTEXT] = AddContext().asInstanceOf[Parser[ADDCONTEXT]]
@@ -43,15 +43,15 @@ object SplLexer extends RegexParsers {
     icon3 | icon4 | icon5 | icon6 | icon8 | icon9 | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch |
     skip | objectM | label | key | parent))
 
-  def apply(line: String, linenum: Int): Either[SPL_ERROR, List[SplToken]] = {
+  def apply(line: String, linenum: Int): Either[SPL_ERROR, SplToken] = {
     //println(s"line = $line")
     parse(tokens, line) match {
       case NoSuccess(msg, next) =>
         println(Console.RED + s"linenum: #${linenum}, error: $msg, line = $line" + Console.RESET)
-        Left(SPL_ERROR(msg))
+        Left(SPL_ERROR(msg, linenum))
       case Success(result, next) =>
         println(Console.GREEN + s"linenum: #${linenum}, success: " + result + Console.RESET)
-        Right(result)
+        Right(result.head)
     }
   }
 }
