@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{EXIT, SplLexer, SplToken}
+import spl.lexer.{EXIT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -41,15 +41,32 @@ object SplParser extends Parsers {
     else acc
   }
 
+  private def validateTokenSet(tokenSet: Set[SplToken]): TokenSetType = {
+    def getType(token: SplToken): TokenSetType = {
+      token match {
+        case ns: SplNamespaceToken => TokenSetType.Namespace
+        case tb: SplTableToken => TokenSetType.Table
+        case ob: SplObjectToken => TokenSetType.Object
+        case _ => throw new Exception(s"Unknown type for token = ${token}")
+      }
+    }
+
+    val headType: TokenSetType = getType(tokenSet.head)
+    tokenSet.tail.foreach { token: SplToken =>
+      val tokenType = getType(token)
+      if(tokenType != headType)
+        throw new Exception(s"Inconsistent token type in set = ${tokenSet}")
+    }
+    headType
+  }
+
   private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): Map[TokenSetType, Set[SplToken]] = {
     listOfTokenSets.map { splTokenSet: Set[SplToken] =>
-      //splTokenSet.
-    }
-    null
+      (validateTokenSet(splTokenSet), splTokenSet)
+    }.toMap
   }
 
   private def buildAST(splTokenList: ListOfSplTokenSets): SplTopLevel = {
-
     null
   }
 
