@@ -5,7 +5,10 @@ import scala.util.matching.Regex
 /**
   * Created by bharadwaj on 31/07/17.
   */
-object TableMatcher extends RegexMatcher[TABLE] {
+object TableLexer extends RegexLexer {
+
+  type T = TABLE
+
   override protected def get(values: String*) = {
     val value_list = values.toList
     val name = value_list.head
@@ -17,7 +20,10 @@ object TableMatcher extends RegexMatcher[TABLE] {
   override protected val regex: Regex = """^DEFINE\s+TABLE\s+([\w_\{\}]+)\s+NAMESPACE\s+([\w\.\{\}]+)\s*(DESCRIPTION\s+'.+?'|)\s*""".r
 }
 
-object ColumnMatcher extends RegexMatcher[COLUMN] {
+object ColumnLexer extends RegexLexer {
+
+  type T = COLUMN
+
   override protected val regex: Regex = ("""^COLUMN\s+([\w_]+)\s+(\([\w\.\:]+?\)|)\s*\[(.+?)\]\s*(<.+?>|)\s*""" +
     """(AS\s+[\d\w_]+|AS\s+'.+?'|AS\s+'.+?'\s*WITH\s+NAME\s*'.+?'|)\s*(\[[LCR]\]|)""" +
     """\s*(WITH\s+SOLRMAPPING\s+\(.+?\)|)\s*(KAFKA)?""").r
@@ -36,13 +42,19 @@ object ColumnMatcher extends RegexMatcher[COLUMN] {
   }
 }
 
-object Linegrab extends RegexMatcher[LINEGRAB] {
+object LinegrabLexer extends RegexLexer {
+
+  type T = LINEGRAB
+
   override protected val regex: Regex = """LINEGRAB\s+/(.*?)/$""".r
 
   override protected def get(values: String*): LINEGRAB = LINEGRAB(values.head.r)
 }
 
-object SetXmlNamespace extends RegexMatcher[SETXMLNAMESPACE] {
+object SetXmlNamespaceLexer extends RegexLexer {
+
+  type T = SETXMLNAMESPACE
+
   override protected val regex: Regex = """SETXMLNAMESPACE\s*/\s*(.*)\s*/""".r
 
   override protected def get(values: String*): SETXMLNAMESPACE = {
@@ -53,13 +65,19 @@ object SetXmlNamespace extends RegexMatcher[SETXMLNAMESPACE] {
   }
 }
 
-object AddContext extends RegexMatcher[ADDCONTEXT] {
+object AddContextLexer extends RegexLexer {
+
+  type T = ADDCONTEXT
+
   override protected val regex: Regex = """ADD_CONTEXT\s*\(([\w_ ,]+?)\)""".r
 
   override protected def get(values: String*): ADDCONTEXT = ADDCONTEXT(values.head)
 }
 
-object Multiline extends RegexMatcher[MULTILINE] {
+object MultilineLexer extends RegexLexer {
+
+  type T = MULTILINE
+
   override protected val regex: Regex = """MULTILINE\s+(NOT|)\s*/(.+?)/\s*('.+?'|)""".r
 
   override protected def get(values: String*): MULTILINE = {
@@ -71,7 +89,10 @@ object Multiline extends RegexMatcher[MULTILINE] {
   }
 }
 
-object MultilineBreakOnUnmatch extends RegexMatcher[MULTILINE_BREAK_ON_UNMATCH] {
+object MultilineBreakOnUnmatchLexer extends RegexLexer {
+
+  type T = MULTILINE_BREAK_ON_UNMATCH
+
   override protected val regex: Regex = """MULTILINE_BREAK_ON_UNMATCH\s+/(.+?)/\s*('.+?'|)""".r
 
   override protected def get(values: String*): MULTILINE_BREAK_ON_UNMATCH = {
@@ -82,7 +103,10 @@ object MultilineBreakOnUnmatch extends RegexMatcher[MULTILINE_BREAK_ON_UNMATCH] 
   }
 }
 
-object Skip extends RegexMatcher[SKIP] {
+object SkipLexer extends RegexLexer {
+
+  type T = SKIP
+
   override protected val regex: Regex = """SKIP\s+(\d+)""".r
 
   override protected def get(values: String*): SKIP = SKIP(values.head.toInt)

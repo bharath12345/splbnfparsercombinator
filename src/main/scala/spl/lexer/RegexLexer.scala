@@ -6,7 +6,9 @@ import scala.util.parsing.combinator.RegexParsers
 /**
   * Created by bharadwaj on 31/07/17.
   */
-trait RegexMatcher[T <: SplToken] extends RegexParsers {
+trait RegexLexer extends RegexParsers {
+
+  type T <: SplToken
 
   protected def regexMatch(regex: Regex): Parser[Regex.Match] = new Parser[Regex.Match] {
     def apply(in: Input): ParseResult[Regex.Match] = {
@@ -27,7 +29,5 @@ trait RegexMatcher[T <: SplToken] extends RegexParsers {
 
   protected def get(values: String*): T
 
-  def apply(): Parser[T] = {
-    regexMatch(regex) ^^ { case m => get(m.subgroups: _*) }
-  }
+  def apply(): Parser[T] = regexMatch(regex) ^^ { case m => get(m.subgroups.map(x => if(x == null) x else x.trim): _*) }
 }

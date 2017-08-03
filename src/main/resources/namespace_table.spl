@@ -13,4 +13,31 @@ DEFINE TABLE tbl_output_output1_txt NAMESPACE ns_output_output1_txt
 DEFINE TABLE unparsed NAMESPACE unparsed
 ;
 
+#========== BEGINNING OF REPORT ==========
+DEFINE NAMESPACE id DESCRIPTION 'BEGINNING OF REPORT'
+	BEGINS WITH /^\=+\s+BEGINNING\s+OF\s+REPORT/
+	FILEPATTERN /.*asup.*/
+;
+#=== Executing command: springpath -l ===
+DEFINE NAMESPACE id.sprgpathl DESCRIPTION 'springpath -l' SOLR
+	BEGINS WITH /^\=+\s+Executing\s+command\:\s+springpath\s+\-l/
+;
+DEFINE NAMESPACE id.sprgpathl.contrlvrsn DESCRIPTION 'Springpath-l Cotroller Version' REF id.sprgpathl SOLR
+	BEGINS WITH /Controller\s+Version\:\s+\S+/
+	CONTEXT /Controller\s+Version\:\s+(\S+)/
+	AS contrlvr
+;
+DEFINE NAMESPACE id.sprgpathl.contrlvrsn.strgcontrl DESCRIPTION 'Springpath-l Storage Controller' REF id.sprgpathl SOLR
+	BEGINS WITH /\s*\w+\s*StorageController\s*\S+\s*\S+$/
+	CONTEXT /\s*\w+\s*StorageController\s*(\S+\s*\S+)$/
+	AS strgcontrlvr
+;
+DEFINE NAMESPACE id.sprgpathl.pack DESCRIPTION 'Springpath-l Package' REF id.sprgpathl SOLR
+	BEGINS WITH /Package\s+Name/
+;
 
+DEFINE TABLE sprgpathl NAMESPACE id.sprgpathl.contrlvrsn.strgcontrl
+;
+
+DEFINE TABLE sprgpathl_pack NAMESPACE id.sprgpathl.pack
+;

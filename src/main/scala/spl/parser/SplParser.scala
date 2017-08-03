@@ -14,7 +14,7 @@ object SplPC extends App {
   val tokens: SplTokenList = (for {
     (code, linenum) <- Source.fromResource("namespace_table.spl").getLines().zipWithIndex
     line = code.trim
-    if line.nonEmpty
+    if line.nonEmpty && line.head != '#'
   } yield {
     SplLexer(line, linenum).right.get
   }).toList
@@ -72,7 +72,6 @@ object SplParser extends Parsers {
   }
 
   private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): SplTokenMap = {
-
     def loop(listOfTokenSets: ListOfSplTokenSets, acc: SplTokenMap = Map()): SplTokenMap = {
       val head = listOfTokenSets.head
       val (tokenType: TokenSetType, tokenName: String) = validateTokenSet(head)
@@ -101,6 +100,12 @@ object SplParser extends Parsers {
   }
 
   private def buildAST(tokenMap: SplTokenMap): SplTopLevel = {
+    /*
+    1. traverse the list of namespaces and build the hierarchy of NamespaceAST. finally there has to be a list of top level NamespaceAST
+    2. traverse the list of tables and plug each one into corresponding NamespaceAST
+    3. build SplTopLevel: this has list of top level NamespaceAST and list of all objects
+     */
+
     null
   }
 

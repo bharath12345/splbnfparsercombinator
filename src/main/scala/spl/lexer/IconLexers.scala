@@ -5,15 +5,19 @@ import scala.util.matching.Regex
 /**
   * Created by bharadwaj on 31/07/17.
   */
-object Icon1Matcher extends RegexMatcher[ICON1] {
-  override protected def get(values: String*) = {
-    ICON1(Icons.withName(values.head.toUpperCase))
-  }
+object Icon1Lexer extends RegexLexer {
+
+  type T = ICON1
+
+  override protected def get(values: String*) = ICON1(Icons.withName(values.head.toUpperCase))
 
   override protected val regex: Regex = """ICON\s+(list\_basic|syslog|apache)""".r
 }
 
-object Icon2Matcher extends RegexMatcher[ICON2] {
+object Icon2Lexer extends RegexLexer {
+
+  type T = ICON2
+
   override protected def get(values: String*) = {
     val value_list = values.toList
     val separator: Regex = value_list.head.r
@@ -24,31 +28,37 @@ object Icon2Matcher extends RegexMatcher[ICON2] {
   override protected val regex: Regex = """ICON\s+nvpair_basic\s*(?:/(.*?)/\s*/(.*?)/|)""".r
 }
 
-object Icon3Matcher extends RegexMatcher[ICON3] {
-  override protected def get(values: String*) = {
-    ICON3(Icons.NVPAIR_UNORDERED, values.head.r)
-  }
+object Icon3Lexer extends RegexLexer {
+
+  type T = ICON3
+
+  override protected def get(values: String*) = ICON3(Icons.NVPAIR_UNORDERED, values.head.r)
 
   override protected val regex: Regex = """ICON\s+nvpair_unordered\s*(?:/(.*?)/\s*|)""".r
 }
 
-object Icon4Matcher extends RegexMatcher[ICON4] {
-  override protected def get(values: String*) = {
-    ICON4(Icons.XML_BASIC, values.head)
-  }
+object Icon4Lexer extends RegexLexer {
+
+  type T = ICON4
+
+  override protected def get(values: String*) = ICON4(Icons.XML_BASIC, values.head)
 
   override protected val regex: Regex = """ICON xml_basic\s*/\s*(.*)\s*/\s*""".r
 }
 
-object Icon5Matcher extends RegexMatcher[ICON5] {
-  override protected def get(values: String*) = {
-    ICON5(Icons.JSON, values.head)
-  }
+object Icon5Lexer extends RegexLexer {
+
+  type T = ICON5
+
+  override protected def get(values: String*) = ICON5(Icons.JSON, values.head)
 
   override protected val regex: Regex = """ICON\s+json\s*/(.*)/""".r
 }
 
-object Icon6Matcher extends RegexMatcher[ICON6] {
+object Icon6Lexer extends RegexLexer {
+
+  type T = ICON6
+
   override protected def get(values: String*) = {
     val value_list = values.toList
     val horSep: String = value_list.head
@@ -60,24 +70,19 @@ object Icon6Matcher extends RegexMatcher[ICON6] {
   override protected val regex: Regex = """ICON\s+aligned_basic\s+'(.*?)'\s*,\s*'(.*?)'\s*,\s*'(.*?)'""".r
 }
 
-/*object Icon7Matcher extends RegexMatcher[ICON7] {
-  override protected def get(values: String*) = {
-    val value_list = values.toList
-    ICON7(Icons.)
-  }
+object Icon8Lexer extends RegexLexer {
 
-  override protected val regex: Regex = """ICON\s+multi_table_align""".r
-}*/
+  type T = ICON8
 
-object Icon8Matcher extends RegexMatcher[ICON8] {
-  override protected def get(values: String*) = {
-    ICON8(Icons.APACHE, values.head)
-  }
+  override protected def get(values: String*) = ICON8(Icons.APACHE, values.head)
 
   override protected val regex: Regex = """ICON\s+apache\s*/(.*)/""".r
 }
 
-object Icon9Matcher extends RegexMatcher[ICON9] {
+object Icon9Lexer extends RegexLexer {
+
+  type T = ICON9
+
   override protected def get(values: String*) = {
     val value_list = values.toList
     val icon = Icons.withName(value_list.head.toUpperCase())

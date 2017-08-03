@@ -52,6 +52,9 @@ package object lexer {
   case class BEGINS_WITH(regex: Regex) extends SplNamespaceToken
   case class ENDS_WITH(regex: Regex) extends SplNamespaceToken
   case class FILEPATTERN(regex: Regex) extends SplNamespaceToken
+  case class CONTEXT(regex: Regex) extends SplNamespaceToken
+  case class AS(colnames: Array[String]) extends SplNamespaceToken
+  case class BUNDLETYPE(btype: String) extends SplNamespaceToken
 
   sealed trait SplTableToken extends SplToken
   case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplTableToken
