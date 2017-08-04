@@ -181,8 +181,17 @@ object SplParser extends Parsers {
     topLevelNamespaceAST
   }
 
-  private def buildTableAST(namespaces: List[NamespaceAST], tables: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+  private def buildTableAST(tokens: Set[SplTokenSuperType]): TableAST = {
+    null
+  }
+
+  private def addTablesToTree(namespaces: List[NamespaceAST], tables: List[TableAST]): List[NamespaceAST] = {
     List()
+  }
+
+  private def buildTableAST(namespaces: List[NamespaceAST], tables: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+    val tableASTs: List[TableAST] = tables.values.map(buildTableAST).toList
+    addTablesToTree(namespaces, tableASTs)
   }
 
   private def buildObjectAST(objects: ListMap[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
