@@ -99,6 +99,18 @@ object SplParser extends Parsers {
     loop(listOfTokenSets)
   }
 
+  private def buildNamespaceAST(namespaces: Map[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+    null
+  }
+
+  private def buildTableAST(namespaces: List[NamespaceAST], tables: Map[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+    null
+  }
+
+  private def buildObjectAST(objects: Map[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
+    null
+  }
+
   private def buildAST(tokenMap: SplTokenMap): SplTopLevel = {
     /*
     1. traverse the list of namespaces and build the hierarchy of NamespaceAST. finally there has to be a list of top level NamespaceAST
@@ -106,7 +118,18 @@ object SplParser extends Parsers {
     3. build SplTopLevel: this has list of top level NamespaceAST and list of all objects
      */
 
-    null
-  }
+    val namespaceAST = tokenMap.get(TokenSetType.Namespace) match {
+      case None => throw new Exception(s"no namespaces in the spl!")
+      case Some(namespaces) => buildNamespaceAST(namespaces)
+    }
 
+    val namespaceTableAST = tokenMap.get(TokenSetType.Table) match {
+      case None => throw new Exception(s"no tables in this spl!")
+      case Some(tables) => buildTableAST(namespaceAST, tables)
+    }
+
+    val objectAST = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, Map()))
+
+    SplTopLevel(namespaceTableAST, objectAST)
+  }
 }
