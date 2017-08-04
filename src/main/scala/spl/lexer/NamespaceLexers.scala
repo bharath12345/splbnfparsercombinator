@@ -74,7 +74,7 @@ object AsLexer extends RegexLexer {
 
   override protected val regex: Regex = """AS\s+([\w_ ,]+)""".r
 
-  override protected def get(values: String*): AS = AS(values.head.split(",").map(_.trim).filter(_.nonEmpty))
+  override protected def get(values: String*): AS = AS(values.head.split(",").map(_.trim).filter(_.nonEmpty).toList)
 }
 
 object BundleType extends RegexLexer {

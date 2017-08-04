@@ -20,11 +20,28 @@ package object parser {
 
   sealed trait SplAST
 
-  case class SplTopLevel(namespaces: List[NamespaceAST], objects: List[ObjectAST]) extends SplAST
+  case class SplTopLevel(namespaces: List[NamespaceAST], objects: List[ObjectAST]) extends SplAST {
+    override def toString: String = {
+      namespaces.mkString("\n") + "\n" + objects.mkString("\n")
+    }
+  }
 
   case class NamespaceAST(namespace: NAMESPACE, begins: Option[BEGINS_WITH], ends: Option[ENDS_WITH],
                           filepattern: Option[FILEPATTERN], context: Option[CONTEXT], as: Option[AS], bundletype: Option[BUNDLETYPE],
-                          childNamespaces: List[NamespaceAST], table: Option[TableAST], level: Int) extends SplAST
+                          childNamespaces: List[NamespaceAST], table: Option[TableAST], level: Int) extends SplAST {
+
+    //private def tabs(ll: Int): String = {var s = ""; for(i <- 1 to ll) s = s + "\n\t"; s}
+
+    private def children: String = if(childNamespaces.isEmpty) "" else s", childNamespaces: ${childNamespaces.map(_.toString)}"
+
+    override def toString: String = {
+      def emptyIfNone(o: Option[SplNamespaceToken], title: String): String = if(o.isEmpty) "" else s"$title = ${o.get.toString},"
+
+      s"NamespaceAST($namespace, ${emptyIfNone(begins, "begins with")} ${emptyIfNone(ends, "ends with")} " +
+        s"${emptyIfNone(filepattern, "filepattern")} ${emptyIfNone(context, "context")} ${emptyIfNone(as, "as")} " +
+        s"${emptyIfNone(bundletype, "bundletype")} table = $table, level = $level $children)"
+    }
+  }
 
   case class TableAST(namespace: NamespaceAST, table: TABLE, icon: ICON, columns: List[COLUMN], linegrab: Option[LINEGRAB],
                       setXmlNs: Option[SETXMLNAMESPACE], addContext: Option[ADDCONTEXT], multiline: Option[MULTILINE],

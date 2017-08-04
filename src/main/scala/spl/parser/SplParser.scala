@@ -5,6 +5,7 @@ import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap
+import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.parsing.combinator.Parsers
 
@@ -40,7 +41,7 @@ object SplParser extends Parsers {
   private def getListOfSplTokenSets(t: SplTokenList, acc: ListOfSplTokenSets = List()): ListOfSplTokenSets = {
     val (y: SplTokenList, z: SplTokenList) = t.span(_.splToken != EXIT)
     //println(s"y = $y, z = $z")
-    if(z.exists(x => x.splToken == EXIT)) getListOfSplTokenSets(z.tail, y.toSet :: acc)
+    if(z.exists(x => x.splToken == EXIT)) getListOfSplTokenSets(z.tail, acc :+ y.toSet)
     else acc.filterNot(_.isEmpty)
   }
 
@@ -100,10 +101,10 @@ object SplParser extends Parsers {
     loop(listOfTokenSets)
   }
 
-  private def namespaceAST(tokenSet: Set[SplTokenSuperType]): NamespaceAST = {
+  private def buildNamespaceAST(tokenSet: Set[SplTokenSuperType]): NamespaceAST = {
     if(tokenSet.size > 7)
       throw new Exception(s"More than 7 elements in Namespace set: $tokenSet")
-    if (tokenSet.size < 3)
+    if (tokenSet.size < 2)
       throw new Exception(s"Less than 3 elements in Namespace set: $tokenSet")
 
     var ast: NamespaceAST = NamespaceAST(null, None, None, None, None, None, None, List(), None, 0)
@@ -118,21 +119,60 @@ object SplParser extends Parsers {
       case x => throw new Exception(s"non namespace element found = $x")
     }
     val name = ast.namespace.name
-    val level = name.split(".").length - 1 // if level = 1, then it is child of top level namespace
-    ast.copy(level = level)
+    val ll = name.split("\\.").length - 1 // if level = 1, then it is child of top level namespace
+    ast = ast.copy(level = ll)
+    println(s"namespace = $name is at level = $ll, ast = $ast")
     ast
   }
 
   private def addToNamespaceTree(topLevelNamespaceAST: List[NamespaceAST], ast: NamespaceAST): List[NamespaceAST] = {
     println(s"namespace = ${ast.namespace.name} has to put in level = ${ast.level}")
 
-    def findAndAdd(astToTraverse: NamespaceAST): Boolean = {
+    /*def findAndAdd(astToTraverse: NamespaceAST): (Boolean, NamespaceAST) = {
       if(astToTraverse.level == (ast.level - 1)) {
-        val parentName: List[String] = astToTraverse.namespace.name.split(".").toList
-        val childName: List[String] = ast.namespace.name.split(".").toList.init
+        val parentName: List[String] = astToTraverse.namespace.name.split("\\.").toList
+        val childName: List[String] = ast.namespace.name.split("\\.").toList.init
         if(parentName == childName) {
           val newChildren = ast +: astToTraverse.childNamespaces
-          astToTraverse.copy(childNamespaces = newChildren)
+          val newAST = astToTraverse.copy(childNamespaces = newChildren)
+          (true, newAST)
+        } else {
+          (false, null)
+        }
+      } else if(astToTraverse.level < (ast.level - 1)) {
+        astToTraverse.childNamespaces.find(child => findAndAdd(child)) match {
+          case None => (false, null)
+          case Some(found) => true
+        }
+      } else
+        (false, null)
+    }
+
+    if(!topLevelNamespaceAST.exists(child => findAndAdd(child))) {
+      throw new Exception(s"could not add child namespace to the tree: $ast")
+    }*/
+
+    case class MutableNamespaceAST(namespace: NAMESPACE, begins: Option[BEGINS_WITH], ends: Option[ENDS_WITH],
+                                   filepattern: Option[FILEPATTERN], context: Option[CONTEXT], as: Option[AS], bundletype: Option[BUNDLETYPE],
+                                   childNamespaces: ListBuffer[MutableNamespaceAST], table: Option[TableAST], level: Int)
+
+    def getMutableNamespaceAST(input: NamespaceAST): MutableNamespaceAST = {
+      MutableNamespaceAST(input.namespace, input.begins, input.ends, input.filepattern, input.context, input.as, input.bundletype,
+        input.childNamespaces.map(getMutableNamespaceAST).to[ListBuffer], input.table, input.level)
+    }
+
+    def getImmutableNamespaceAST(input: MutableNamespaceAST): NamespaceAST = {
+      NamespaceAST(input.namespace, input.begins, input.ends, input.filepattern, input.context, input.as, input.bundletype,
+        input.childNamespaces.map(getImmutableNamespaceAST).toList, input.table, input.level)
+    }
+
+    def findAndAdd(astToTraverse: MutableNamespaceAST): Boolean = {
+      if(astToTraverse.level == (ast.level - 1)) {
+        val parentName: List[String] = astToTraverse.namespace.name.split("\\.").toList
+        val childName: List[String] = ast.namespace.name.split("\\.").toList.init
+        if(parentName == childName) {
+          val mutableAST = getMutableNamespaceAST(ast)
+          astToTraverse.childNamespaces.append(mutableAST)
           true
         } else {
           false
@@ -146,17 +186,18 @@ object SplParser extends Parsers {
         false
     }
 
-    if(!topLevelNamespaceAST.exists(child => findAndAdd(child))) {
+    val mutableList = topLevelNamespaceAST.map(getMutableNamespaceAST)
+    if(!mutableList.exists(child => findAndAdd(child))) {
       throw new Exception(s"could not add child namespace to the tree: $ast")
     }
 
-    topLevelNamespaceAST
+    mutableList.map(getImmutableNamespaceAST)
   }
 
   private def buildNamespaceAST(namespaces: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
     var topLevelNamespaceAST: List[NamespaceAST] = List()
     namespaces.foreach { case (name, tokenSet) =>
-      val ast = namespaceAST(tokenSet)
+      val ast = buildNamespaceAST(tokenSet)
       topLevelNamespaceAST =
         if(ast.level > 0) addToNamespaceTree(topLevelNamespaceAST, ast)
         else ast +: topLevelNamespaceAST

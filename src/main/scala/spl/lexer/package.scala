@@ -40,6 +40,8 @@ package object lexer {
     val LIST_BASIC, NVPAIR_BASIC, NVPAIR_UNORDERED, ALIGNED_BASIC, XML_BASIC, JSON, CSV_NOHEADER, SYSLOG, APACHE, CSV_WITHHEADER = Value
   }
 
+  def emptyIfNone(title: String, os: Option[String]): String = if(os.isEmpty) "" else s"$title = ${os.get},"
+
   sealed trait SplToken
 
   sealed trait SplSpecialToken extends SplToken
@@ -48,18 +50,28 @@ package object lexer {
 
   sealed trait SplNamespaceToken extends SplToken
   case class NAMESPACE(name: String, desc: Option[String], nstype: Option[NamespaceType], isLock: Boolean, ref: Option[String],
-                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplNamespaceToken
+                       isXml: Boolean, isJson: Boolean, isSolr: Boolean, maxLines: Option[Long]) extends SplNamespaceToken {
+    override def toString: String = {
+      s"NAMESPACE($name, ${emptyIfNone("desc", desc)} ${emptyIfNone("nstype", nstype.map(_.toString))} lock = $isLock, " +
+        s"${emptyIfNone("ref", ref)} isXml = $isXml, isJson = $isJson, ${emptyIfNone("maxlines", maxLines.map(_.toString))} isSolr = $isSolr)"
+    }
+  }
   case class BEGINS_WITH(regex: Regex) extends SplNamespaceToken
   case class ENDS_WITH(regex: Regex) extends SplNamespaceToken
   case class FILEPATTERN(regex: Regex) extends SplNamespaceToken
   case class CONTEXT(regex: Regex) extends SplNamespaceToken
-  case class AS(colnames: Array[String]) extends SplNamespaceToken
+  case class AS(colnames: List[String]) extends SplNamespaceToken
   case class BUNDLETYPE(btype: String) extends SplNamespaceToken
 
   sealed trait SplTableToken extends SplToken
   case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplTableToken
   case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
-                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplTableToken
+                    align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplTableToken {
+    override def toString: String = {
+      s"COLUMN($name, ${emptyIfNone("aspect", aspect)} ${emptyIfNone("ddl", ddl)} attribs = $attribs, ${emptyIfNone("as", as)} " +
+        s"${emptyIfNone("align", align)} ${emptyIfNone("solrmap", solrmap)} kafka = $kafka)"
+    }
+  }
   case class LINEGRAB(regex: Regex) extends SplTableToken
   case class SETXMLNAMESPACE(urls: Array[String]) extends SplTableToken
   case class ADDCONTEXT(params: String) extends SplTableToken
