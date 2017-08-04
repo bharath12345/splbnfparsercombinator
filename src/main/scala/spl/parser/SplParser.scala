@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{EXIT, KEY, LABEL, NAMESPACE, OBJECT, PARENT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
+import spl.lexer.{AS, BEGINS_WITH, BUNDLETYPE, CONTEXT, ENDS_WITH, EXIT, FILEPATTERN, KEY, LABEL, NAMESPACE, OBJECT, PARENT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -101,17 +101,38 @@ object SplParser extends Parsers {
   }
 
   private def namespaceAST(tokenSet: Set[SplTokenSuperType]): NamespaceAST = {
+    if(tokenSet.size > 7)
+      throw new Exception(s"More than 7 elements in Namespace set: $tokenSet")
+    if (tokenSet.size < 3)
+      throw new Exception(s"Less than 3 elements in Namespace set: $tokenSet")
+
+    var ast: NamespaceAST = NamespaceAST(null, None, None, None, None, None, None, List(), None)
+    tokenSet.foreach {
+      case SplTokenSuperType(x: NAMESPACE, _) => ast = ast.copy(namespace = x)
+      case SplTokenSuperType(x: BEGINS_WITH, _) => ast = ast.copy(begins = Option(x))
+      case SplTokenSuperType(x: ENDS_WITH, _) => ast = ast.copy(ends = Option(x))
+      case SplTokenSuperType(x: FILEPATTERN, _) => ast = ast.copy(filepattern = Option(x))
+      case SplTokenSuperType(x: CONTEXT, _) => ast = ast.copy(context = Option(x))
+      case SplTokenSuperType(x: AS, _) => ast = ast.copy(as = Option(x))
+      case SplTokenSuperType(x: BUNDLETYPE, _) => ast = ast.copy(bundletype = Option(x))
+      case x => throw new Exception(s"non object element found = $x")
+    }
+    ast
+  }
+
+  private def addToNamespaceTree(topLevelNamespaceAST: List[NamespaceAST], ast: NamespaceAST): List[NamespaceAST] = {
     null
   }
 
   private def buildNamespaceAST(namespaces: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
     var topLevelNamespaceAST: List[NamespaceAST] = List()
     namespaces.foreach { case (name, tokenSet) =>
+      val ast = namespaceAST(tokenSet)
       val topLevel: Boolean = name.contains(".")
-      if(topLevel) {
-
+      topLevelNamespaceAST = if(topLevel) {
+        addToNamespaceTree(topLevelNamespaceAST, ast)
       } else {
-
+        ast +: topLevelNamespaceAST
       }
     }
     topLevelNamespaceAST
@@ -154,7 +175,7 @@ object SplParser extends Parsers {
       case Some(tables: ListMap[String, Set[SplTokenSuperType]]) => buildTableAST(namespaceAST, tables)
     }
 
-    val objectAST: List[ObjectAST] = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
+    val objectAST = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
 
     SplTopLevel(namespaceTableAST, objectAST)
   }
