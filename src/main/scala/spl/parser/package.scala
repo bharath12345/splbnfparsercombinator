@@ -8,9 +8,9 @@ import spl.parser.TokenSetType.TokenSetType
   */
 package object parser {
 
-  type ListOfSplTokenSets = List[Set[SplToken]]
-  type SplTokenList = List[SplToken]
-  type SplTokenMap = Map[TokenSetType, Map[String, Set[SplToken]]]
+  type ListOfSplTokenSets = List[Set[SplTokenSuperType]]
+  type SplTokenList = List[SplTokenSuperType]
+  type SplTokenMap = Map[TokenSetType, Map[String, Set[SplTokenSuperType]]]
 
   // two rules in the AST :
   // 1. table can be contained only in a namespace

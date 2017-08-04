@@ -84,4 +84,8 @@ package object lexer {
   case class KEY(keys: Set[String]) extends SplObjectToken
   case class PARENT(parents: Set[String]) extends SplObjectToken
 
+  case class SplTokenSuperType(splToken: SplToken, linenum: Int) {
+    override def toString: String = s"[$splToken, $linenum]"
+  }
+
 }

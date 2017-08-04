@@ -57,13 +57,9 @@ object SplLexer extends RegexParsers {
   private val tableTokens: Parser[SplTableToken] = table | iconTokens | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch | skip
   private val objectTokens: Parser[SplObjectToken] = objectM | label | key | parent
 
-  /*private val tokens: Parser[List[SplToken]] = phrase(rep1(exit | namespace | beginsWith | endsWith | filepattern | context | as | bundletype |
-    table | icon1 | icon2 | icon3 | icon4 | icon5 | icon6 | icon8 | icon9 | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch |
-    skip | objectM | label | key | parent))*/
-
   private val tokens: Parser[List[SplToken]] = phrase(rep1(specialTokens | namespaceTokens | iconTokens | tableTokens | objectTokens))
 
-  def apply(line: String, linenum: Int): Either[SPL_ERROR, SplToken] = {
+  def apply(line: String, linenum: Int): Either[SPL_ERROR, SplTokenSuperType] = {
     //println(s"line = $line")
     parse(tokens, line) match {
       case NoSuccess(msg, next) =>
@@ -71,7 +67,7 @@ object SplLexer extends RegexParsers {
         Left(SPL_ERROR(msg, linenum))
       case Success(result, next) =>
         println(Console.GREEN + s"linenum: #${linenum}, success: " + result + Console.RESET)
-        Right(result.head)
+        Right(SplTokenSuperType(result.head, linenum))
     }
   }
 }

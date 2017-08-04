@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{EXIT, NAMESPACE, OBJECT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, TABLE}
+import spl.lexer.{EXIT, NAMESPACE, OBJECT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -37,13 +37,13 @@ object SplParser extends Parsers {
 
   @tailrec
   private def getListOfSplTokenSets(t: SplTokenList, acc: ListOfSplTokenSets = List()): ListOfSplTokenSets = {
-    val (y: SplTokenList, z: SplTokenList) = t.span(_ != EXIT)
+    val (y: SplTokenList, z: SplTokenList) = t.span(_.splToken != EXIT)
     //println(s"y = $y, z = $z")
-    if(z.contains(EXIT)) getListOfSplTokenSets(z.tail, y.toSet :: acc)
+    if(z.exists(x => x.splToken == EXIT)) getListOfSplTokenSets(z.tail, y.toSet :: acc)
     else acc.filterNot(_.isEmpty)
   }
 
-  private def validateTokenSet(tokenSet: Set[SplToken]): (TokenSetType, String) = {
+  private def validateTokenSet(tokenSet: Set[SplTokenSuperType]): (TokenSetType, String) = {
     def getType(token: SplToken): TokenSetType = {
       token match {
         case _: SplNamespaceToken => TokenSetType.Namespace
@@ -62,13 +62,13 @@ object SplParser extends Parsers {
       }
     }
 
-    val headType: TokenSetType = getType(tokenSet.head)
-    tokenSet.tail.foreach { token: SplToken =>
-      val tokenType = getType(token)
+    val headType: TokenSetType = getType(tokenSet.head.splToken)
+    tokenSet.tail.foreach { token: SplTokenSuperType =>
+      val tokenType = getType(token.splToken)
       if(tokenType != headType)
         throw new Exception(s"Inconsistent token type in set = ${tokenSet}")
     }
-    (headType, getName(tokenSet.head))
+    (headType, getName(tokenSet.head.splToken))
   }
 
   private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): SplTokenMap = {
@@ -76,7 +76,7 @@ object SplParser extends Parsers {
       val head = listOfTokenSets.head
       val (tokenType: TokenSetType, tokenName: String) = validateTokenSet(head)
 
-      def inner(newNamedSet: Map[String, Set[SplToken]]) = {
+      def inner(newNamedSet: Map[String, Set[SplTokenSuperType]]): SplTokenMap = {
         val newacc = acc + (tokenType -> newNamedSet)
         if(listOfTokenSets.tail.nonEmpty) loop(listOfTokenSets.tail, newacc)
         else newacc
