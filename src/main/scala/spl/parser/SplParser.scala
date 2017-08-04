@@ -108,13 +108,15 @@ object SplParser extends Parsers {
   }
 
   private def buildObjectAST(objects: Map[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
-    objects.map { case (name, superTokens: Set[SplTokenSuperType]) =>
+    objects.map { case (_, superTokens: Set[SplTokenSuperType]) =>
+      if(superTokens.size != 4)
+        throw new Exception(s"num of object elements not equal to 4: $superTokens")
       var ast: ObjectAST = null
       superTokens.foreach {
-        case SplTokenSuperType(x: OBJECT, _) => ast.copy(obj = x)
-        case SplTokenSuperType(x: LABEL, _) => ast.copy(label = x)
-        case SplTokenSuperType(x: KEY, _) => ast.copy(key = x)
-        case SplTokenSuperType(x: PARENT, _) =>
+        case SplTokenSuperType(x: OBJECT, _) => ast = ast.copy(obj = x)
+        case SplTokenSuperType(x: LABEL, _) => ast = ast.copy(label = x)
+        case SplTokenSuperType(x: KEY, _) => ast = ast.copy(key = x)
+        case SplTokenSuperType(x: PARENT, _) => ast = ast.copy(parent = x)
         case x => throw new Exception(s"non object element found = $x")
       }
       ast
