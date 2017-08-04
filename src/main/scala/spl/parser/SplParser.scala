@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{EXIT, NAMESPACE, OBJECT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
+import spl.lexer.{EXIT, KEY, LABEL, NAMESPACE, OBJECT, PARENT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -108,7 +108,17 @@ object SplParser extends Parsers {
   }
 
   private def buildObjectAST(objects: Map[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
-    null
+    objects.map { case (name, superTokens: Set[SplTokenSuperType]) =>
+      var ast: ObjectAST = null
+      superTokens.foreach {
+        case SplTokenSuperType(x: OBJECT, _) => ast.copy(obj = x)
+        case SplTokenSuperType(x: LABEL, _) => ast.copy(label = x)
+        case SplTokenSuperType(x: KEY, _) => ast.copy(key = x)
+        case SplTokenSuperType(x: PARENT, _) =>
+        case x => throw new Exception(s"non object element found = $x")
+      }
+      ast
+    }.toList
   }
 
   private def buildAST(tokenMap: SplTokenMap): SplTopLevel = {
