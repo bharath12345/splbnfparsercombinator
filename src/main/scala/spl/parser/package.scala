@@ -24,7 +24,7 @@ package object parser {
 
   case class NamespaceAST(namespace: NAMESPACE, begins: Option[BEGINS_WITH], ends: Option[ENDS_WITH],
                           filepattern: Option[FILEPATTERN], context: Option[CONTEXT], as: Option[AS], bundletype: Option[BUNDLETYPE],
-                          childNamespace: List[NamespaceAST], table: Option[TableAST]) extends SplAST
+                          childNamespaces: List[NamespaceAST], table: Option[TableAST], level: Int) extends SplAST
 
   case class TableAST(namespace: NamespaceAST, table: TABLE, icon: ICON, columns: List[COLUMN], linegrab: Option[LINEGRAB],
                       setXmlNs: Option[SETXMLNAMESPACE], addContext: Option[ADDCONTEXT], multiline: Option[MULTILINE],

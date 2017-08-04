@@ -106,7 +106,7 @@ object SplParser extends Parsers {
     if (tokenSet.size < 3)
       throw new Exception(s"Less than 3 elements in Namespace set: $tokenSet")
 
-    var ast: NamespaceAST = NamespaceAST(null, None, None, None, None, None, None, List(), None)
+    var ast: NamespaceAST = NamespaceAST(null, None, None, None, None, None, None, List(), None, 0)
     tokenSet.foreach {
       case SplTokenSuperType(x: NAMESPACE, _) => ast = ast.copy(namespace = x)
       case SplTokenSuperType(x: BEGINS_WITH, _) => ast = ast.copy(begins = Option(x))
@@ -115,25 +115,51 @@ object SplParser extends Parsers {
       case SplTokenSuperType(x: CONTEXT, _) => ast = ast.copy(context = Option(x))
       case SplTokenSuperType(x: AS, _) => ast = ast.copy(as = Option(x))
       case SplTokenSuperType(x: BUNDLETYPE, _) => ast = ast.copy(bundletype = Option(x))
-      case x => throw new Exception(s"non object element found = $x")
+      case x => throw new Exception(s"non namespace element found = $x")
     }
+    val name = ast.namespace.name
+    val level = name.split(".").length - 1 // if level = 1, then it is child of top level namespace
+    ast.copy(level = level)
     ast
   }
 
   private def addToNamespaceTree(topLevelNamespaceAST: List[NamespaceAST], ast: NamespaceAST): List[NamespaceAST] = {
-    null
+    println(s"namespace = ${ast.namespace.name} has to put in level = ${ast.level}")
+
+    def findAndAdd(astToTraverse: NamespaceAST): Boolean = {
+      if(astToTraverse.level == (ast.level - 1)) {
+        val parentName: List[String] = astToTraverse.namespace.name.split(".").toList
+        val childName: List[String] = ast.namespace.name.split(".").toList.init
+        if(parentName == childName) {
+          val newChildren = ast +: astToTraverse.childNamespaces
+          astToTraverse.copy(childNamespaces = newChildren)
+          true
+        } else {
+          false
+        }
+      } else if(astToTraverse.level < (ast.level - 1)) {
+        astToTraverse.childNamespaces.find(child => findAndAdd(child)) match {
+          case None => false
+          case Some(found) => true
+        }
+      } else
+        false
+    }
+
+    if(!topLevelNamespaceAST.exists(child => findAndAdd(child))) {
+      throw new Exception(s"could not add child namespace to the tree: $ast")
+    }
+
+    topLevelNamespaceAST
   }
 
   private def buildNamespaceAST(namespaces: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
     var topLevelNamespaceAST: List[NamespaceAST] = List()
     namespaces.foreach { case (name, tokenSet) =>
       val ast = namespaceAST(tokenSet)
-      val topLevel: Boolean = name.contains(".")
-      topLevelNamespaceAST = if(topLevel) {
-        addToNamespaceTree(topLevelNamespaceAST, ast)
-      } else {
-        ast +: topLevelNamespaceAST
-      }
+      topLevelNamespaceAST =
+        if(ast.level > 0) addToNamespaceTree(topLevelNamespaceAST, ast)
+        else ast +: topLevelNamespaceAST
     }
     topLevelNamespaceAST
   }
@@ -169,14 +195,17 @@ object SplParser extends Parsers {
       case None => throw new Exception(s"no namespaces in the spl!")
       case Some(namespaces: ListMap[String, Set[SplTokenSuperType]]) => buildNamespaceAST(namespaces)
     }
+    println(s"completed namespaces AST = $namespaceAST")
 
     val namespaceTableAST = tokenMap.get(TokenSetType.Table) match {
       case None => throw new Exception(s"no tables in this spl!")
       case Some(tables: ListMap[String, Set[SplTokenSuperType]]) => buildTableAST(namespaceAST, tables)
     }
+    println(s"completed namespace and table AST = $namespaceTableAST")
 
     val objectAST = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
-
-    SplTopLevel(namespaceTableAST, objectAST)
+    val fullAST = SplTopLevel(namespaceTableAST, objectAST)
+    println(s"completed full AST = $fullAST")
+    fullAST
   }
 }
