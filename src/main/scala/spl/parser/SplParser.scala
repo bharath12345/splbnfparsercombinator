@@ -4,6 +4,7 @@ import spl.lexer.{EXIT, KEY, LABEL, NAMESPACE, OBJECT, PARENT, SplLexer, SplName
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
+import scala.collection.immutable.ListMap
 import scala.io.Source
 import scala.util.parsing.combinator.Parsers
 
@@ -72,11 +73,11 @@ object SplParser extends Parsers {
   }
 
   private def validateAndMap(listOfTokenSets: ListOfSplTokenSets): SplTokenMap = {
-    def loop(listOfTokenSets: ListOfSplTokenSets, acc: SplTokenMap = Map()): SplTokenMap = {
+    def loop(listOfTokenSets: ListOfSplTokenSets, acc: SplTokenMap = ListMap()): SplTokenMap = {
       val head = listOfTokenSets.head
       val (tokenType: TokenSetType, tokenName: String) = validateTokenSet(head)
 
-      def inner(newNamedSet: Map[String, Set[SplTokenSuperType]]): SplTokenMap = {
+      def inner(newNamedSet: ListMap[String, Set[SplTokenSuperType]]): SplTokenMap = {
         val newacc = acc + (tokenType -> newNamedSet)
         if(listOfTokenSets.tail.nonEmpty) loop(listOfTokenSets.tail, newacc)
         else newacc
@@ -84,9 +85,9 @@ object SplParser extends Parsers {
 
       acc.get(tokenType) match {
         case None =>
-          inner(Map(tokenName -> head))
+          inner(ListMap(tokenName -> head))
 
-        case Some(namedTokenSet) =>
+        case Some(namedTokenSet: ListMap[String, Set[SplTokenSuperType]]) =>
           namedTokenSet.get(tokenName) match {
             case Some(_) =>
               throw new Exception(s"two spl tokens of same type = $tokenType and name = $tokenName found")
@@ -99,15 +100,28 @@ object SplParser extends Parsers {
     loop(listOfTokenSets)
   }
 
-  private def buildNamespaceAST(namespaces: Map[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+  private def namespaceAST(tokenSet: Set[SplTokenSuperType]): NamespaceAST = {
     null
   }
 
-  private def buildTableAST(namespaces: List[NamespaceAST], tables: Map[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+  private def buildNamespaceAST(namespaces: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
+    var topLevelNamespaceAST: List[NamespaceAST] = List()
+    namespaces.foreach { case (name, tokenSet) =>
+      val topLevel: Boolean = name.contains(".")
+      if(topLevel) {
+
+      } else {
+
+      }
+    }
+    topLevelNamespaceAST
+  }
+
+  private def buildTableAST(namespaces: List[NamespaceAST], tables: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
     null
   }
 
-  private def buildObjectAST(objects: Map[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
+  private def buildObjectAST(objects: ListMap[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
     objects.map { case (_, superTokens: Set[SplTokenSuperType]) =>
       if(superTokens.size != 4)
         throw new Exception(s"num of object elements not equal to 4: $superTokens")
@@ -132,15 +146,15 @@ object SplParser extends Parsers {
 
     val namespaceAST = tokenMap.get(TokenSetType.Namespace) match {
       case None => throw new Exception(s"no namespaces in the spl!")
-      case Some(namespaces) => buildNamespaceAST(namespaces)
+      case Some(namespaces: ListMap[String, Set[SplTokenSuperType]]) => buildNamespaceAST(namespaces)
     }
 
     val namespaceTableAST = tokenMap.get(TokenSetType.Table) match {
       case None => throw new Exception(s"no tables in this spl!")
-      case Some(tables) => buildTableAST(namespaceAST, tables)
+      case Some(tables: ListMap[String, Set[SplTokenSuperType]]) => buildTableAST(namespaceAST, tables)
     }
 
-    val objectAST = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, Map()))
+    val objectAST: List[ObjectAST] = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
 
     SplTopLevel(namespaceTableAST, objectAST)
   }

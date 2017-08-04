@@ -3,6 +3,8 @@ package spl
 import spl.lexer._
 import spl.parser.TokenSetType.TokenSetType
 
+import scala.collection.immutable.ListMap
+
 /**
   * Created by bharadwaj on 31/07/17.
   */
@@ -10,7 +12,7 @@ package object parser {
 
   type ListOfSplTokenSets = List[Set[SplTokenSuperType]]
   type SplTokenList = List[SplTokenSuperType]
-  type SplTokenMap = Map[TokenSetType, Map[String, Set[SplTokenSuperType]]]
+  type SplTokenMap = Map[TokenSetType, ListMap[String, Set[SplTokenSuperType]]]
 
   // two rules in the AST :
   // 1. table can be contained only in a namespace
