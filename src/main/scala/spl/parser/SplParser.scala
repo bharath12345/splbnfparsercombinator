@@ -128,30 +128,6 @@ object SplParser extends Parsers {
   private def addToNamespaceTree(topLevelNamespaceAST: List[NamespaceAST], ast: NamespaceAST): List[NamespaceAST] = {
     println(s"namespace = ${ast.namespace.name} has to put in level = ${ast.level}")
 
-    /*def findAndAdd(astToTraverse: NamespaceAST): (Boolean, NamespaceAST) = {
-      if(astToTraverse.level == (ast.level - 1)) {
-        val parentName: List[String] = astToTraverse.namespace.name.split("\\.").toList
-        val childName: List[String] = ast.namespace.name.split("\\.").toList.init
-        if(parentName == childName) {
-          val newChildren = ast +: astToTraverse.childNamespaces
-          val newAST = astToTraverse.copy(childNamespaces = newChildren)
-          (true, newAST)
-        } else {
-          (false, null)
-        }
-      } else if(astToTraverse.level < (ast.level - 1)) {
-        astToTraverse.childNamespaces.find(child => findAndAdd(child)) match {
-          case None => (false, null)
-          case Some(found) => true
-        }
-      } else
-        (false, null)
-    }
-
-    if(!topLevelNamespaceAST.exists(child => findAndAdd(child))) {
-      throw new Exception(s"could not add child namespace to the tree: $ast")
-    }*/
-
     case class MutableNamespaceAST(namespace: NAMESPACE, begins: Option[BEGINS_WITH], ends: Option[ENDS_WITH],
                                    filepattern: Option[FILEPATTERN], context: Option[CONTEXT], as: Option[AS], bundletype: Option[BUNDLETYPE],
                                    childNamespaces: ListBuffer[MutableNamespaceAST], table: Option[TableAST], level: Int)
@@ -206,7 +182,7 @@ object SplParser extends Parsers {
   }
 
   private def buildTableAST(namespaces: List[NamespaceAST], tables: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
-    null
+    List()
   }
 
   private def buildObjectAST(objects: ListMap[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
@@ -244,7 +220,7 @@ object SplParser extends Parsers {
     }
     println(s"completed namespace and table AST = $namespaceTableAST")
 
-    val objectAST = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
+    val objectAST: List[ObjectAST] = buildObjectAST(tokenMap.getOrElse(TokenSetType.Object, ListMap()))
     val fullAST = SplTopLevel(namespaceTableAST, objectAST)
     println(s"completed full AST = $fullAST")
     fullAST
