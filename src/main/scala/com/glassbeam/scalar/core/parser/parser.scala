@@ -17,4 +17,13 @@ package object parser {
     STR2SUM, SDF2EPOCH, EPOCH2SDF, DATEDIFF , TIME2MIN, TIME230DAY, HEX2BIN, BIN2HEX, DISCARDOLDTIME, InvalidFunc = Value
   }
 
+  // Add an enumerated object
+  object CASES extends Enumeration {
+    type CASE = Value
+    val NOCASE, // NO case in effect
+    CASEWHEN, // CASE, looking for WHEN or ELSE
+    CASETHEN, // CASE, executing (until WHEN, ELSE)
+    CASEEND = Value // CASE, looking for END
+  }
+
 }

@@ -4,7 +4,7 @@ import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.Ops._
 import com.glassbeam.scalar.core.parser._
-import ColOp.ColumnParameter
+import ColOp.{ColColumnParameter, ColumnParameter, DoubleColumnParameter, LongColumnParameter, StringColumnParameter}
 import com.glassbeam.scalar.model.ColumnType.ColumnType
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.utils.StripUtils._
@@ -81,7 +81,7 @@ object ColOp extends Logger {
 
 }
 
-abstract class ColOp(val op: String, val param: String, val splline: Int, val SIM: SharedImmutables, val COS: ColOpSharables) {
+abstract class ColOp(val op: String, val param: String, val splline: Int) {
   def exec(): Unit
 
   def flush(): Unit
@@ -90,10 +90,9 @@ abstract class ColOp(val op: String, val param: String, val splline: Int, val SI
 }
 
 
-abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int,
-                             SIM: SharedImmutables, COS: ColOpSharables) {
+abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int) {
 
-  import ColOp._
+  import ColOp.logger
 
   def verify: PartialFunction[Ops, Unit => Unit]
 
@@ -157,8 +156,6 @@ trait ColOpTrait extends ColOp {
   val op: String
   val param: String
   val splline: Int
-  val SIM: SharedImmutables
-  val COS: ColOpSharables
 
   override val columnOperation: Ops = Ops.withName(op)
 
@@ -175,34 +172,34 @@ trait ColOpTrait extends ColOp {
   }
   logger.debug(SIM.mpspath, s"colparam=$colparam")
 
-  private val colAddRowNumber = new ColAddRowNumber(colparam, op, param, splline, SIM, COS)
-  private val colAssert = new ColAssert(colparam, op, param, splline, SIM, COS)
-  private val colBound = new ColBound(colparam, op, param, splline, SIM, COS)
-  private val colCalc = new ColCalc(colparam, op, param, splline, SIM, COS)
-  private val colCase = new ColCase(colparam, op, param, splline, SIM, COS)
-  private val colCopy = new ColCopy(colparam, op, param, splline, SIM, COS)
-  private val colCount = new ColCount(colparam, op, param, splline, SIM, COS)
-  private val rowDrop = new RowDrop(colparam, op, param, splline, SIM, COS)
-  private val colDrop = new ColDrop(colparam, op, param, splline, SIM, COS)
-  private val colElse = new ColElse(colparam, op, param, splline, SIM, COS)
-  private val colEnd = new ColEnd(colparam, op, param, splline, SIM, COS)
-  private val colFill = new ColFill(colparam, op, param, splline, SIM, COS)
-  private val colHierarchy = new ColHierarchy(colparam, op, param, splline, SIM, COS)
-  private val colJoin = new ColJoin(colparam, op, param, splline, SIM, COS)
-  private val colLookupByName = new ColLookupByName(colparam, op, param, splline, SIM, COS)
-  private val colLookupByPosition = new ColLookupByPosition(colparam, op, param, splline, SIM, COS)
-  private val colMap = new ColMap(colparam, op, param, splline, SIM, COS)
-  private val colPrint = new ColPrint(colparam, op, param, splline, SIM, COS)
-  private val colRep = new ColRep(colparam, op, param, splline, SIM, COS)
-  private val colRowSplit = new ColRowSplit(colparam, op, param, splline, SIM, COS)
-  private val colSplit = new ColSplit(colparam, op, param, splline, SIM, COS)
-  private val colWhen = new ColWhen(colparam, op, param, splline, SIM, COS)
-  private val constrain = new Constrain(colparam, op, param, splline, SIM, COS)
+  private val colAddRowNumber = new ColAddRowNumber(colparam, op, param, splline)
+  private val colAssert = new ColAssert(colparam, op, param, splline)
+  private val colBound = new ColBound(colparam, op, param, splline)
+  private val colCalc = new ColCalc(colparam, op, param, splline)
+  private val colCase = new ColCase(colparam, op, param, splline)
+  private val colCopy = new ColCopy(colparam, op, param, splline)
+  private val colCount = new ColCount(colparam, op, param, splline)
+  private val rowDrop = new RowDrop(colparam, op, param, splline)
+  private val colDrop = new ColDrop(colparam, op, param, splline)
+  private val colElse = new ColElse(colparam, op, param, splline)
+  private val colEnd = new ColEnd(colparam, op, param, splline)
+  private val colFill = new ColFill(colparam, op, param, splline)
+  private val colHierarchy = new ColHierarchy(colparam, op, param, splline)
+  private val colJoin = new ColJoin(colparam, op, param, splline)
+  private val colLookupByName = new ColLookupByName(colparam, op, param, splline)
+  private val colLookupByPosition = new ColLookupByPosition(colparam, op, param, splline)
+  private val colMap = new ColMap(colparam, op, param, splline)
+  private val colPrint = new ColPrint(colparam, op, param, splline)
+  private val colRep = new ColRep(colparam, op, param, splline)
+  private val colRowSplit = new ColRowSplit(colparam, op, param, splline)
+  private val colSplit = new ColSplit(colparam, op, param, splline)
+  private val colWhen = new ColWhen(colparam, op, param, splline)
+  private val constrain = new Constrain(colparam, op, param, splline)
 
   // these are empty
-  private val colBranch = new ColBranch(colparam, op, param, splline, SIM, COS)
-  private val colPush = new ColPush(colparam, op, param, splline, SIM, COS)
-  private val colFile = new ColFile(colparam, op, param, splline, SIM, COS)
+  private val colBranch = new ColBranch(colparam, op, param, splline)
+  private val colPush = new ColPush(colparam, op, param, splline)
+  private val colFile = new ColFile(colparam, op, param, splline)
 
   // ToDo: The order of these partial functions should be in the order of maximum usage
   private val verify: PartialFunction[Ops, Unit => Unit] = (colCalc.verify orElse colRep.verify orElse colCopy.verify
