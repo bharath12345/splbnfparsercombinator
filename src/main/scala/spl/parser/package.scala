@@ -45,7 +45,7 @@ package object parser {
 
   case class TableAST(namespace: NamespaceAST, table: TABLE, icon: ICON, columns: List[COLUMN], linegrab: Option[LINEGRAB],
                       setXmlNs: Option[SETXMLNAMESPACE], addContext: Option[ADDCONTEXT], multiline: Option[MULTILINE],
-                      multilineBOU: Option[MULTILINE_BREAK_ON_UNMATCH], skip: SKIP) extends SplAST
+                      multilineBOU: Option[MULTILINE_BREAK_ON_UNMATCH], skip: Option[SKIP]) extends SplAST
 
   case class ObjectAST(obj: OBJECT, label: LABEL, key: KEY, parent: PARENT) extends SplAST
 

@@ -1,6 +1,6 @@
 package spl.parser
 
-import spl.lexer.{AS, BEGINS_WITH, BUNDLETYPE, CONTEXT, ENDS_WITH, EXIT, FILEPATTERN, KEY, LABEL, NAMESPACE, OBJECT, PARENT, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
+import spl.lexer.{ADDCONTEXT, AS, BEGINS_WITH, BUNDLETYPE, COLUMN, CONTEXT, ENDS_WITH, EXIT, FILEPATTERN, ICON, KEY, LABEL, LINEGRAB, MULTILINE, MULTILINE_BREAK_ON_UNMATCH, NAMESPACE, OBJECT, PARENT, SETXMLNAMESPACE, SKIP, SplLexer, SplNamespaceToken, SplObjectToken, SplTableToken, SplToken, SplTokenSuperType, TABLE}
 import spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
@@ -156,7 +156,7 @@ object SplParser extends Parsers {
       } else if(astToTraverse.level < (ast.level - 1)) {
         astToTraverse.childNamespaces.find(child => findAndAdd(child)) match {
           case None => false
-          case Some(found) => true
+          case _ => true
         }
       } else
         false
@@ -182,16 +182,68 @@ object SplParser extends Parsers {
   }
 
   private def buildTableAST(tokens: Set[SplTokenSuperType]): TableAST = {
-    null
+    var ast: TableAST = TableAST(null, null, null, List(), None, None, None, None, None, None)
+    tokens.foreach {
+      case SplTokenSuperType(x: TABLE, _) => ast = ast.copy(table = x)
+      case SplTokenSuperType(x: ICON, _) => ast = ast.copy(icon = x)
+      case SplTokenSuperType(x: COLUMN, _) => val cols = x +: ast.columns; ast.copy(columns = cols)
+      case SplTokenSuperType(x: LINEGRAB, _) => ast = ast.copy(linegrab = Option(x))
+      case SplTokenSuperType(x: SETXMLNAMESPACE, _) => ast = ast.copy(setXmlNs = Option(x))
+      case SplTokenSuperType(x: ADDCONTEXT, _) => ast = ast.copy(addContext = Option(x))
+      case SplTokenSuperType(x: MULTILINE, _) => ast = ast.copy(multiline = Option(x))
+      case SplTokenSuperType(x: MULTILINE_BREAK_ON_UNMATCH, _) => ast = ast.copy(multilineBOU = Option(x))
+      case SplTokenSuperType(x: SKIP, _) => ast = ast.copy(skip = Option(x))
+      case x => throw new Exception(s"non table element found = $x")
+    }
+    ast
   }
 
-  private def addTablesToTree(namespaces: List[NamespaceAST], tables: List[TableAST]): List[NamespaceAST] = {
-    List()
+  private def addTableToTree(topLevelNamespaceAST: List[NamespaceAST], table: TableAST): List[NamespaceAST] = {
+    val tblNamespaceName: String = table.table.namespace
+
+    case class MutableNamespaceAST(namespace: NAMESPACE, begins: Option[BEGINS_WITH], ends: Option[ENDS_WITH],
+                                   filepattern: Option[FILEPATTERN], context: Option[CONTEXT], as: Option[AS], bundletype: Option[BUNDLETYPE],
+                                   childNamespaces: List[MutableNamespaceAST], var table: Option[TableAST], level: Int)
+
+
+    def getMutableNamespaceAST(input: NamespaceAST): MutableNamespaceAST = {
+      MutableNamespaceAST(input.namespace, input.begins, input.ends, input.filepattern, input.context, input.as, input.bundletype,
+        input.childNamespaces.map(getMutableNamespaceAST), input.table, input.level)
+    }
+
+    def getImmutableNamespaceAST(input: MutableNamespaceAST): NamespaceAST = {
+      NamespaceAST(input.namespace, input.begins, input.ends, input.filepattern, input.context, input.as, input.bundletype,
+        input.childNamespaces.map(getImmutableNamespaceAST), input.table, input.level)
+    }
+
+    def findAndAdd(astToTraverse: MutableNamespaceAST): Boolean = {
+      if(astToTraverse.namespace.name == tblNamespaceName) {
+        val newTable = table.copy(namespace = getImmutableNamespaceAST(astToTraverse))
+        astToTraverse.table = Option(newTable)
+        true
+      } else {
+        astToTraverse.childNamespaces.find(child => findAndAdd(child)) match {
+          case None => false
+          case _ => true
+        }
+      }
+    }
+
+    val mutableList = topLevelNamespaceAST.map(getMutableNamespaceAST)
+    if(!mutableList.exists(child => findAndAdd(child))) {
+      throw new Exception(s"could not add table to the tree: $table")
+    }
+
+    mutableList.map(getImmutableNamespaceAST)
   }
 
   private def buildTableAST(namespaces: List[NamespaceAST], tables: ListMap[String, Set[SplTokenSuperType]]): List[NamespaceAST] = {
     val tableASTs: List[TableAST] = tables.values.map(buildTableAST).toList
-    addTablesToTree(namespaces, tableASTs)
+    var namespacesWithTbl = namespaces
+    tableASTs.foreach { table =>
+      namespacesWithTbl = addTableToTree(namespacesWithTbl, table)
+    }
+    namespacesWithTbl
   }
 
   private def buildObjectAST(objects: ListMap[String, Set[SplTokenSuperType]]): List[ObjectAST] = {
