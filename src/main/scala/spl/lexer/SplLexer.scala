@@ -45,6 +45,10 @@ object SplLexer extends RegexParsers {
   private val multiline: Parser[MULTILINE] = MultilineLexer.instance
   private val multilineBreakOnUnmatch: Parser[MULTILINE_BREAK_ON_UNMATCH] = MultilineBreakOnUnmatchLexer.instance
   private val skip: Parser[SKIP] = SkipLexer.instance
+  private val columns: Parser[COLUMN] = ColumnLexer.instance
+  private val colop: Parser[COLOP] = ColOpLexer.instance
+  private val rowop: Parser[ROWOP] = RowOpLexer.instance
+  private val colCaseOpsLexer: Parser[COPCASEOP] = ColCaseOpsLexer.instance
 
   private val objectM: Parser[OBJECT] = ObjectLexer.instance
   private val label: Parser[LABEL] = LabelLexer.instance
@@ -54,9 +58,13 @@ object SplLexer extends RegexParsers {
   private val specialTokens: Parser[SplSpecialToken] = exit
   private val namespaceTokens: Parser[SplNamespaceToken] = namespace | beginsWith | endsWith | filepattern | context | as | bundletype
   private val iconTokens: Parser[ICON] = icon1 | icon2 | icon3 | icon4 | icon5 | icon6 | icon8 | icon9
-  private val tableTokens: Parser[SplTableToken] = table | iconTokens | linegrab | setXmlNamespace | addContext | multiline | multilineBreakOnUnmatch | skip
+  private val columnTokens: Parser[SplTableToken] = columns | colop | rowop | colCaseOpsLexer
+  private val tableTokens: Parser[SplTableToken] = table | iconTokens | linegrab | columnTokens | setXmlNamespace | addContext |
+    multiline | multilineBreakOnUnmatch | skip
   private val objectTokens: Parser[SplObjectToken] = objectM | label | key | parent
 
+  // ToDo: optimize this way of extracting tokens; based on what was the type of the last token search only for the next type subset like
+  // ToDo: after finding table find its type token tokens till exit
   private val tokens: Parser[List[SplToken]] = phrase(rep1(specialTokens | namespaceTokens | iconTokens | tableTokens | objectTokens))
 
   def apply(line: String, linenum: Int): Either[SPL_ERROR, SplTokenSuperType] = {

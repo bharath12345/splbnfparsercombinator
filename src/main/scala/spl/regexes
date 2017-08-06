@@ -24,6 +24,9 @@ val createtable_r = """CREATE\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 val insertinto_r = """INSERT\s+INTO\s+TABLE\s+([\w_]+)\s+WITH\s+SQL""".r
 val define_r = """DEFINE\s+(DIMENSION|ASPECT|GROUPING)\s+(\w+)""".r
 
+val colops_r = """(COL\w+)\s*\((.*?)\)""".r
+val rowops_r = """(ROW\w+)\s*\((.*?)\)""".r
+val colcaseops_r = """(COLCASE|COLELSE|COLEND)""".r
 
 val icon_r = """ICON\s+(list\_basic|syslog|apache)""".r
 val icon_nvpair_r = """ICON\s+nvpair_basic\s*(?:/(.*?)/\s*/(.*?)/|)""".r

@@ -1,5 +1,6 @@
 package spl
 
+import spl.colops.Ops.Ops
 import spl.lexer.Icons.Icons
 import spl.lexer.NamespaceType.NamespaceType
 
@@ -65,10 +66,10 @@ package object lexer {
 
   sealed trait SplTableToken extends SplToken
   case class TABLE(name: String, namespace: String, desc: Option[String]) extends SplTableToken
-  case class COLUMN(name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
+  case class COLUMN(table_name: String, column_name: String, aspect: Option[String], ddl: Option[String], attribs: String, as: Option[String],
                     align: Option[String], solrmap: Option[String], kafka: Boolean) extends SplTableToken {
     override def toString: String = {
-      s"COLUMN($name, ${emptyIfNone("aspect", aspect)} ${emptyIfNone("ddl", ddl)} attribs = $attribs, ${emptyIfNone("as", as)} " +
+      s"COLUMN($column_name, ${emptyIfNone("aspect", aspect)} ${emptyIfNone("ddl", ddl)} attribs = $attribs, ${emptyIfNone("as", as)} " +
         s"${emptyIfNone("align", align)} ${emptyIfNone("solrmap", solrmap)} kafka = $kafka)"
     }
   }
@@ -89,6 +90,23 @@ package object lexer {
   case class ICON7(icon: Icons) extends ICON // multi_table_align_r
   case class ICON8(icon: Icons, logformat: String) extends ICON // icon_apache_r
   case class ICON9(icon: Icons, csvType: String, sep: String) extends ICON // icon_csv_r
+
+  /*
+    1. Each colop has a verify function which returns a exec function. verify stores mutable state, that is used by exec
+    2. A colop takes a vector of ColumnParameter as input. ColumnParameter is a set of types: String, Numeric, Regex, Column and ColumnFunction
+
+    What to do:
+    1. Dont bring ColOpFunction into this project
+    2. Table has a list of ColOpTrait's
+    3. ColOpTrait has to be brought in but not with SharedImmutables and ColOpSharables
+    4. Run the verification after creating of a ColOp object. And if the verify fails then throw exception
+
+    The ugly part is each ColOp creates all the operation objects - remove this by switching on columnOperation. Create only one object
+   */
+
+  case class COLOP(colop: Ops, coloptext: String) extends SplTableToken
+  case class ROWOP(rowop: String, rowoptext: String) extends SplTableToken
+  case class COPCASEOP(op: Ops) extends SplTableToken
 
   sealed trait SplObjectToken extends SplToken
   case class OBJECT(name: String) extends SplObjectToken

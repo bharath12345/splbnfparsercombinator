@@ -1,5 +1,8 @@
 package spl.lexer
 
+import spl.colops.Ops
+import spl.colops.Ops.Ops
+
 import scala.util.matching.Regex
 
 /**
@@ -21,7 +24,6 @@ object TableLexer extends RegexLexer {
 }
 
 object ColumnLexer extends RegexLexer {
-
   type T = COLUMN
 
   override protected val regex: Regex = ("""^COLUMN\s+([\w_]+)\s+(\([\w\.\:]+?\)|)\s*\[(.+?)\]\s*(<.+?>|)\s*""" +
@@ -38,12 +40,11 @@ object ColumnLexer extends RegexLexer {
     val align: Option[String] = Option(value_list(5))
     val solrmap: Option[String] = Option(value_list(6))
     val kafka: Boolean = value_list(7) == "KAFKA"
-    COLUMN(name, aspect, ddl, attribs, as, align, solrmap, kafka)
+    COLUMN(null, name, aspect, ddl, attribs, as, align, solrmap, kafka)
   }
 }
 
 object LinegrabLexer extends RegexLexer {
-
   type T = LINEGRAB
 
   override protected val regex: Regex = """LINEGRAB\s+/(.*?)/$""".r
@@ -52,7 +53,6 @@ object LinegrabLexer extends RegexLexer {
 }
 
 object SetXmlNamespaceLexer extends RegexLexer {
-
   type T = SETXMLNAMESPACE
 
   override protected val regex: Regex = """SETXMLNAMESPACE\s*/\s*(.*)\s*/""".r
@@ -66,7 +66,6 @@ object SetXmlNamespaceLexer extends RegexLexer {
 }
 
 object AddContextLexer extends RegexLexer {
-
   type T = ADDCONTEXT
 
   override protected val regex: Regex = """ADD_CONTEXT\s*\(([\w_ ,]+?)\)""".r
@@ -75,7 +74,6 @@ object AddContextLexer extends RegexLexer {
 }
 
 object MultilineLexer extends RegexLexer {
-
   type T = MULTILINE
 
   override protected val regex: Regex = """MULTILINE\s+(NOT|)\s*/(.+?)/\s*('.+?'|)""".r
@@ -90,7 +88,6 @@ object MultilineLexer extends RegexLexer {
 }
 
 object MultilineBreakOnUnmatchLexer extends RegexLexer {
-
   type T = MULTILINE_BREAK_ON_UNMATCH
 
   override protected val regex: Regex = """MULTILINE_BREAK_ON_UNMATCH\s+/(.+?)/\s*('.+?'|)""".r
@@ -104,10 +101,40 @@ object MultilineBreakOnUnmatchLexer extends RegexLexer {
 }
 
 object SkipLexer extends RegexLexer {
-
   type T = SKIP
 
   override protected val regex: Regex = """SKIP\s+(\d+)""".r
 
   override protected def get(values: String*): SKIP = SKIP(values.head.toInt)
+}
+
+object ColOpLexer extends RegexLexer {
+  override type T = COLOP
+
+  override protected val regex: Regex = """(COL\w+)\s*\((.*?)\)""".r
+
+  override protected def get(values: String*): COLOP = {
+    val value_list = values.toList
+    val op: Ops = Ops.withName(value_list.head)
+    COLOP(op, value_list(1))
+  }
+}
+
+object RowOpLexer extends RegexLexer {
+  override type T = ROWOP
+
+  override protected val regex: Regex = """(ROW\w+)\s*\((.*?)\)""".r
+
+  override protected def get(values: String*): ROWOP = {
+    val value_list = values.toList
+    ROWOP(value_list(0), value_list(1))
+  }
+}
+
+object ColCaseOpsLexer extends RegexLexer {
+  override type T = COPCASEOP
+
+  override protected val regex: Regex = """(COLCASE|COLELSE|COLEND)""".r
+
+  override protected def get(values: String*): COPCASEOP = COPCASEOP(Ops.withName(values.head))
 }
