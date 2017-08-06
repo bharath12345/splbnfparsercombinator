@@ -1,5 +1,11 @@
 package com.glassbeam.scalar.core.spl
 
+import com.glassbeam.scalar.core.colops.ColOpTrait
+import com.glassbeam.scalar.core.spl.lexer._
+import com.glassbeam.scalar.core.spl.parser.TokenSetType.TokenSetType
+
+import scala.collection.immutable.ListMap
+
 package object parser {
 
   type ListOfSplTokenSets = List[Set[SplTokenSuperType]]

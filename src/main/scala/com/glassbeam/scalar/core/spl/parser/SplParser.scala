@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.spl.parser
 
-import spl.lexer._
-import spl.parser.TokenSetType.TokenSetType
+import com.glassbeam.scalar.core.spl.lexer._
+import com.glassbeam.scalar.core.spl.parser.TokenSetType.TokenSetType
 
 import scala.annotation.tailrec
 import scala.collection.immutable.ListMap

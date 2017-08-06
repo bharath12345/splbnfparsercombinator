@@ -28,12 +28,12 @@ class ColBound(colparam: Vector[ColumnParameter], op: String, param: String, spl
         case Some(cbnd) =>
           val m = Methods.withName(cbnd)
           if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-            SIM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
+            throw new Exception(s"COLBOUND 1st argument must be COLUMN, l# $splline")
             colerror = true
           }
 
         case None => {
-          SIM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
+          throw new Exception(s"COLBOUND 1st argument must be COLUMN, l# $splline")
           colerror = true
         }
       }

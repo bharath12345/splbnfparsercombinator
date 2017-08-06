@@ -1,7 +1,8 @@
 package com.glassbeam.scalar.core.spl.lexer
 
-import spl.colops.Ops
-import spl.colops.Ops.Ops
+
+import com.glassbeam.scalar.core.parser.Ops
+import com.glassbeam.scalar.core.parser.Ops.Ops
 
 import scala.util.matching.Regex
 

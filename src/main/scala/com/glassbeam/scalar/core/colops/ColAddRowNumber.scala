@@ -16,7 +16,7 @@ class ColAddRowNumber(colparam: Vector[ColumnParameter], op: String, param: Stri
     case ADD_ROW_NUMBER =>
       val colerror =
         if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-          SIM.error(s"ADD_ROW_NUMBER requires ONE column, l# $splline")
+          throw new Exception(s"ADD_ROW_NUMBER requires ONE column, l# $splline")
           true
         } else {
           false

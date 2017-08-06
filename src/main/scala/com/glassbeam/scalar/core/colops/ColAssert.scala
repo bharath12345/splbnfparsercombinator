@@ -22,7 +22,7 @@ class ColAssert(colparam: Vector[ColumnParameter], op: String, param: String, sp
     case COLASSERT =>
       val colerror =
         if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-          SIM.error(s"COLASSERT requires ONE column, l# $splline")
+          throw new Exception(s"COLASSERT requires ONE column, l# $splline")
           true
         } else {
           false

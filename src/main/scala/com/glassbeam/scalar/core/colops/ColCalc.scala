@@ -10,7 +10,6 @@ import com.glassbeam.scalar.core.dateformat.DateFormats
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.{ColColumnParameter, ColumnParameter}
-import com.glassbeam.scalar.core.parser.{ColOpSharables, NumberSystem, SharedImmutables, SharedMutables}
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.model.constants.Constants
 import org.apache.commons.codec.digest.DigestUtils

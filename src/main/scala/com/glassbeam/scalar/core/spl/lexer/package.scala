@@ -1,8 +1,8 @@
 package com.glassbeam.scalar.core.spl
 
-import spl.colops.Ops.Ops
-import spl.lexer.Icons.Icons
-import spl.lexer.NamespaceType.NamespaceType
+import com.glassbeam.scalar.core.parser.Ops.Ops
+import com.glassbeam.scalar.core.spl.lexer.Icons.Icons
+import com.glassbeam.scalar.core.spl.lexer.NamespaceType.NamespaceType
 
 import scala.util.matching.Regex
 import scala.util.parsing.input.Positional
