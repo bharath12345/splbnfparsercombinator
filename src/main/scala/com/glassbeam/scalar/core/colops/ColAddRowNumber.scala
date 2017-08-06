@@ -27,7 +27,7 @@ class ColAddRowNumber(colparam: Vector[ColumnParameter], op: String, param: Stri
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
-    Unit =>
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       colparam.tail.last match {
         case StringColumnParameter(StringValue("$row")) =>
           colparam.head.setValue(LongValue(COS.row))

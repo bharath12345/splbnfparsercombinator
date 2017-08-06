@@ -26,4 +26,9 @@ package object parser {
     CASEEND = Value // CASE, looking for END
   }
 
+  object Methods extends Enumeration {
+    type Methods = Value
+    val FIRST, LAST, MIN, MAX = Value
+  }
+
 }

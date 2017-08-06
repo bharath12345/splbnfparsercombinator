@@ -19,6 +19,7 @@ package object colops extends Logger {
     val mpspath = ""
     def fatal: String => Unit = logger.info
     def error: String => Unit = logger.info
+    def warning: String => Unit = logger.info
   }
 
   def empty(s: SharedImmutables, c: ColOpSharables) = Unit

@@ -3,7 +3,7 @@ package com.glassbeam.scalar.core.colops
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.core.parser.Methods._
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, Methods, SharedImmutables, SharedMutables}
+import com.glassbeam.scalar.core.parser.Methods
 import ColOp.{ColColumnParameter, ColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -16,33 +16,33 @@ object ColBound extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColBound(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColBound(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
   import ColBound._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLBOUND =>
-      logger.debug(SM.mpspath, s"COLBOUND, colparam = $colparam, param = $param")
+      logger.debug(SIM.mpspath, s"COLBOUND, colparam = $colparam, param = $param")
       var colerror = false
       ColString(colparam(1)) match {
         case Some(cbnd) =>
           val m = Methods.withName(cbnd)
           if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-            SM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
+            SIM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
             colerror = true
           }
 
         case None => {
-          SM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
+          SIM.error(s"COLBOUND 1st argument must be COLUMN, l# $splline")
           colerror = true
         }
       }
-      if(colerror) PartialFunction.empty
+      if(colerror) empty
       else exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         val t =
           Methods.withName(ColString(colparam(1)).get) match {
