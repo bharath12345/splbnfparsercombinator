@@ -4,7 +4,6 @@ import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger}
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.{ColColumnParameter, ColumnParameter, LongColumnParameter}
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 
 import scala.collection.immutable.Vector
 import scala.util.control.NonFatal
@@ -17,48 +16,42 @@ object RowDrop extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class RowDrop(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class RowDrop(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import RowDrop._
 
   var durationInDays : Long = 1825 // 5 years
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case ROWDROP =>
-      var colerror = false
       var func = InvalidFunc
       try {
         func = colparam(0).func
       } catch {
         case e: java.lang.ClassCastException =>
-          SM.fatal(s"ROWDROP Function does not exist, l# $splline")
-          colerror = true
+          throw new Exception(s"ROWDROP Function does not exist, l# $splline")
       }
       func match {
         case DISCARDOLDTIME =>
           if (colparam.size != 4) {
-            SM.error(s"DISCARDOLDTIME must have  four parameters, l# $splline")
-            colerror = true
+            throw new Exception(s"DISCARDOLDTIME must have  four parameters, l# $splline")
           }
           if (!colparam(1).isInstanceOf[ColColumnParameter] || !colparam(2).isInstanceOf[ColColumnParameter]) {
-            SM.error(s"DISCARDOLDTIME must have param1 &2 as Column, l# $splline")
-            colerror = true
+            throw new Exception(s"DISCARDOLDTIME must have param1 &2 as Column, l# $splline")
           }
           colparam(3) match {
             case LongColumnParameter(value) =>
               durationInDays = value.value
             case _ =>
-              SM.error(s"DISCARDOLDTIME param 3 must be Long, l# $splline")
-              colerror = true
+              throw new Exception(s"DISCARDOLDTIME param 3 must be Long, l# $splline")
           }
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       val func = colparam(0).func
       logger.debug(SM.mpspath, "ROWDROP(" + splline + ") function Value = " + func)
       func match {

@@ -2,7 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{Logger, StringValue}
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 import ColOp.{ColColumnParameter, ColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -15,26 +14,23 @@ object ColLookupByName extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColLookupByName(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColLookupByName(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColLookupByName._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLLOOKUPBYNAME =>
-      var colerror = false
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-        SM.error("the lookup target is not defined as a column")
-        colerror = true
+        throw new Exception("the lookup target is not defined as a column")
       } else
-        logger.info(SM.mpspath, "COL-LOOKUP-BY-NAME definition found")
+        logger.info("COL-LOOKUP-BY-NAME definition found")
 
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         val lookupColumn = ColLookUpCache.lookupValueOfKey(SM.mfr + "/" + SM.prod + "/" + SM.sch, colparam(1).toString())
         colparam.head.column.setValue(StringValue(lookupColumn.get))

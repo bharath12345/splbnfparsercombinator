@@ -2,7 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 import com.glassbeam.scalar.model._
 
 import scala.collection.immutable.Vector
@@ -14,24 +13,20 @@ object ColRep extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColRep(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColRep(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColRep._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLREP(/pattern/, STRING, col)
     case COLREP => // /regex/, 'string', column
-      var colerror = false
-
       if (!colparam(0).isInstanceOf[RegexColumnParameter]) {
-        SM.error(s"COLREP first parameter must be a pattern, l# $splline")
-        colerror = true
+        throw new Exception(s"COLREP first parameter must be a pattern, l# $splline")
       }
 
       if (!colparam(2).isInstanceOf[ColColumnParameter]) {
-        SM.error(s"COLREP third parameter must be a COLUMN, l# $splline")
-        colerror = true
+        throw new Exception(s"COLREP third parameter must be a COLUMN, l# $splline")
       }
 
       val column = colparam(2).asInstanceOf[ColColumnParameter]
@@ -43,12 +38,11 @@ class ColRep(colparam: Vector[ColumnParameter], op: String, param: String, splli
       //  colerror = true
       //}
 
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       val rx = colparam.head.regex
       logger.debug(SM.mpspath, s"COLREP($splline): rx=" + rx)
       for {

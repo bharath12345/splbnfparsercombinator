@@ -3,7 +3,6 @@ package com.glassbeam.scalar.core.colops
 import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.ColumnParameter
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 import com.glassbeam.scalar.model.Logger
 
 import scala.collection.immutable.Vector
@@ -15,18 +14,18 @@ object ColEnd extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColEnd(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColEnd(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColEnd._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLEND =>
       exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       if (COS.cases == CASETHEN || COS.cases == CASEEND) {
         COS.cases = NOCASE
         logger.debug(SM.mpspath, s"COLEND got Called, COS.cases=${COS.cases}")

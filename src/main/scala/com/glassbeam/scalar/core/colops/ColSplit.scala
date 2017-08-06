@@ -2,8 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger, StringValue}
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
-import com.glassbeam.scalar.core.parser.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -16,34 +14,29 @@ object ColSplit extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColSplit(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColSplit(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColSplit._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLSPLIT(srcCol, /pattern-w-backref/, destCol1 [, destColN])
     case COLSPLIT => //  col, regex-w-backrefs, col1, ...
-      var colerror = false
       if (colparam.size < 3) {
-        SM.error(s"COLSPLIT must have at least three parameters, l# $splline")
-        colerror = true
+        throw new Exception(s"COLSPLIT must have at least three parameters, l# $splline")
       } else {
         if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-          SM.error(s"COLSPLIT first parameter must be COLUMN, l# $splline")
-          colerror = true
+          throw new Exception(s"COLSPLIT first parameter must be COLUMN, l# $splline")
         }
         if (!colparam(1).isInstanceOf[RegexColumnParameter]) {
-          SM.error(s"COLSPLIT second parameter must be a pattern, l# $splline")
-          colerror = true
+          throw new Exception(s"COLSPLIT second parameter must be a pattern, l# $splline")
         }
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         if(colparam.head.getValue.isEmpty) {
           logger.warning(s"Colsplit incoming column is empty. splline = $splline")

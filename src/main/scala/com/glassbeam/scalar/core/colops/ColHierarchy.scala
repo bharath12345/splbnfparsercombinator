@@ -2,8 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger, StringValue}
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
-import com.glassbeam.scalar.core.parser.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -17,35 +15,30 @@ object ColHierarchy extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColHierarchy(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColHierarchy(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColHierarchy._
 
   private var hArray: Array[String] = null
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLHIERARCHY =>
-      var colerror = false
       if (colparam.size < 4) {
-        SM.error(s"COLHIERARCHY must have at least four parameters, l# $splline")
-        colerror = true
+        throw new Exception(s"COLHIERARCHY must have at least four parameters, l# $splline")
       } else {
         if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-          SM.error(s"COLHIERARCHY first parameter must be COLUMN, l# $splline")
-          colerror = true
+          throw new Exception(s"COLHIERARCHY first parameter must be COLUMN, l# $splline")
         }
         if (!colparam(2).isInstanceOf[RegexColumnParameter]) {
-          SM.error(s"COLHIERARCHY third parameter must be a Regex, l# $splline")
-          colerror = true
+          throw new Exception(s"COLHIERARCHY third parameter must be a Regex, l# $splline")
         }
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       if(colparam.head.getValue.isEmpty) {
         logger.error(SM.mpspath, s"colhierarchy source is empty. splline = $splline", true)
       } else {

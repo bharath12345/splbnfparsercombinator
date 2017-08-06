@@ -11,7 +11,7 @@ import scala.collection.immutable.Vector
 class ColBranch(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLBRANCH =>
       throw new Exception(s"COLBRANCH not yet implemented, l# $splline")
       PartialFunction.empty

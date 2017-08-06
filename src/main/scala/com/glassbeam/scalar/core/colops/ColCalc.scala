@@ -155,7 +155,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
-    Unit =>
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       val func: Funcs = colparam(1).func
       logger.debug(SIM.mpspath, "COLCALC(" + splline + ") function Value = " + func)
       func match {

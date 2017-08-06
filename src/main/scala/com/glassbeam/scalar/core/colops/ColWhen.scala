@@ -3,8 +3,6 @@ package com.glassbeam.scalar.core.colops
 import com.glassbeam.scalar.model.{Logger, StringValue}
 import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
-import com.glassbeam.scalar.core.parser.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.utils.MatchUtils._
 
@@ -17,30 +15,26 @@ object ColWhen extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColWhen(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColWhen(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColWhen._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLWHEN =>
-      var colerror = false
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-        SM.error(s"COLWHEN first parameter must be a column, l# $splline")
-        colerror = false
+        throw new Exception(s"COLWHEN first parameter must be a column, l# $splline")
       }
 
       if (!colparam(1).isInstanceOf[RegexColumnParameter]) {
-        SM.error(s"COLWHEN second parameter must be a pattern, l# $splline")
-        colerror = false
+        throw new Exception(s"COLWHEN second parameter must be a pattern, l# $splline")
       }
 
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       COS.cases match {
         case NOCASE =>
           logger.error(SM.mpspath, "WHEN/ELSE without CASE", true)

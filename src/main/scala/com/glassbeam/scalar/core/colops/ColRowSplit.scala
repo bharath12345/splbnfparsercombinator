@@ -2,7 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{Logger, StringValue}
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 import ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -15,32 +14,28 @@ object ColRowSplit extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColRowSplit(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColRowSplit(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColRowSplit._
 
   private var rowsplitOps = 0
   private var rowsplitIter: Iterator[String] = null
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case ROWSPLIT => // /pattern/, src-col
-      var colerror = false
       if (colparam.size != 2 || !colparam(0).isInstanceOf[RegexColumnParameter] || !colparam(1).isInstanceOf[ColColumnParameter]) {
-        SM.error(s"ROWSPLIT must have two parameters, a pattern and a column, l# $splline")
-        colerror = true
+        throw new Exception(s"ROWSPLIT must have two parameters, a pattern and a column, l# $splline")
       } else if (rowsplitOps > 1) {
-        SM.error(s"ROWSPLIT can only be used once inside a table, l# $splline")
-        colerror = true
+        throw new Exception(s"ROWSPLIT can only be used once inside a table, l# $splline")
       } else
         rowsplitOps += 1 // Only one ROWSPLIT per table
 
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         val reg = colparam.head.regex
         if (!COS.seenRowsplit && ColString(colparam(1)).isDefined) {

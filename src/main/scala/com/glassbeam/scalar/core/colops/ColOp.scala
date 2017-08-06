@@ -94,7 +94,7 @@ abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: String, para
 
   import ColOp.logger
 
-  def verify: PartialFunction[Ops, Unit => Unit]
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit]
 
   // ToDo: This whole function is UGLY and needs to be REMOVED
   protected def ColString(x: ColumnParameter): Option[String] = {
