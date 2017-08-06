@@ -2,8 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger, LongValue}
 import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
-import com.glassbeam.scalar.core.parser.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.utils.MatchUtils._
 
@@ -17,30 +15,26 @@ object ColCount extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCount(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColCount(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
   import ColCount._
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLCOUNT =>
-      var colerror = false
       if (colparam.size < 3) {
-        SM.error(s"COLCOUNT must have Three parameters, l# $splline")
-        colerror = true
+        throw new Exception(s"COLCOUNT must have Three parameters, l# $splline")
       } else if (!(colparam.head.isInstanceOf[ColColumnParameter] &&
         colparam(1).isInstanceOf[RegexColumnParameter] && colparam.last.isInstanceOf[ColColumnParameter])) {
-        SM.error(s"COLCOUNT 1st & 3nd parameter must both be COLUMNS, ${colparam.head}, ${colparam(1)}, ${colparam.last}  l# $splline")
-        colerror = true
+        throw new Exception(s"COLCOUNT 1st & 3nd parameter must both be COLUMNS, ${colparam.head}, ${colparam(1)}, ${colparam.last}  l# $splline")
       } else {
         logger.info(s"COLCOUNT compiled successfully Param1 = ${colparam.head}, Param2 = ${colparam(2)}, Param1 = ${colparam.tail}")
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         if(colparam.head.getValue.isEmpty) {
           logger.error(SM.mpspath, s"Colcount on empty value. splline = $splline", true)

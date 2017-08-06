@@ -14,16 +14,10 @@ class ColAddRowNumber(colparam: Vector[ColumnParameter], op: String, param: Stri
 
   def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case ADD_ROW_NUMBER =>
-      val colerror =
         if (!colparam.head.isInstanceOf[ColColumnParameter]) {
           throw new Exception(s"ADD_ROW_NUMBER requires ONE column, l# $splline")
-          true
-        } else {
-          false
         }
-
-      if (colerror) empty
-      else exec
+      exec
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {

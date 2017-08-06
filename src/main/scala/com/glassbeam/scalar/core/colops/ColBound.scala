@@ -23,22 +23,18 @@ class ColBound(colparam: Vector[ColumnParameter], op: String, param: String, spl
   def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLBOUND =>
       logger.debug(SIM.mpspath, s"COLBOUND, colparam = $colparam, param = $param")
-      var colerror = false
       ColString(colparam(1)) match {
         case Some(cbnd) =>
           val m = Methods.withName(cbnd)
           if (!colparam.head.isInstanceOf[ColColumnParameter]) {
             throw new Exception(s"COLBOUND 1st argument must be COLUMN, l# $splline")
-            colerror = true
           }
 
         case None => {
           throw new Exception(s"COLBOUND 1st argument must be COLUMN, l# $splline")
-          colerror = true
         }
       }
-      if(colerror) empty
-      else exec
+      exec
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {

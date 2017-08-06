@@ -10,6 +10,7 @@ import com.glassbeam.scalar.core.dateformat.DateFormats
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.{ColColumnParameter, ColumnParameter}
+import com.glassbeam.scalar.core.parser.NumberSystem
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.model.constants.Constants
 import org.apache.commons.codec.digest.DigestUtils
@@ -26,8 +27,8 @@ object ColCalc extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) with NumberSystem with Constants {
+class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) with NumberSystem with Constants {
 
   import ColCalc._
 
@@ -43,64 +44,55 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
 
   private lazy val cal = Calendar.getInstance(TIMEZONE_UTC) // Instantiate once
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     // FN: ADJYEAR -- COLCALC(destCol, ADJYEAR, 'Apr', '2009', 'Dec')
     // FN: GMTIME
     // FN: LOCALTIME
     case COLCALC =>
-      var colerror = false
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-        SM.error(s"COLCALC first parameter must be a COLUMN, l# $splline")
-        colerror = true
+        throw new Exception(s"COLCALC first parameter must be a COLUMN, l# $splline")
       }
       var func: Funcs = InvalidFunc
       try {
         func = colparam(1).func
       } catch {
         case e: java.lang.ClassCastException =>
-          SM.fatal(s"COLCALC Function does not exist, l# $splline")
-          colerror = true
+          throw new Exception(s"COLCALC Function does not exist, l# $splline")
       }
       func match {
         case ZEROPAD =>
           val align = ColString(colparam(2))
           if (align.head != "L" && align.head != "R") {
-            SM.error(s"COLCALC/ZEROPAD must specify L or R, l# $splline")
-            colerror = true
+            throw new Exception(s"COLCALC/ZEROPAD must specify L or R, l# $splline")
           }
 
         case STR2TIME =>
-          SM.fatal(s"STR2TIME($splline) NOT SUPPORTED -- use SDF2EPOCH")
-          colerror = true
+          throw new Exception(s"STR2TIME($splline) NOT SUPPORTED -- use SDF2EPOCH")
 
         case STR2MMYY =>
-          SM.fatal(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2EPOCH & TIME2MONTH")
-          colerror = true
+          throw new Exception(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2EPOCH & TIME2MONTH")
 
         case InvalidFunc =>
-          SM.fatal(s"COLCALC Function does not exist, l# $splline")
-          colerror = true
+          throw new Exception(s"COLCALC Function does not exist, l# $splline")
 
         case SDF2EPOCH =>
           if (colparam.size < 4) {
-            SM.error(s"COLCALC must have at least four parameters, l# $splline")
-            colerror = true
+            throw new Exception(s"COLCALC must have at least four parameters, l# $splline")
           } else {
             ColString(colparam(2)) match {
               case Some(fmt) =>
-                logger.debug(SM.mpspath, s"Compiling SDF, Format=${fmt}")
+                logger.debug(SIM.mpspath, s"Compiling SDF, Format=${fmt}")
                 val sdf = new SimpleDateFormat(fmt)
                 sdf.setTimeZone(TIMEZONE_UTC)
                 sdf2epoch_sdfMap += (fmt -> sdf)
               case None =>
-                SM.error(s"SDF2EPOCH format should not be null, l# $splline")
-                colerror = true
+                throw new Exception(s"SDF2EPOCH format should not be null, l# $splline")
             }
           }
 
         case EPOCH2SDF =>
           try {
-            logger.debug(SM.mpspath, s"EPOCH2SDF($splline) input=${ColString(colparam(3))} format=${ColString(colparam(2))}")
+            logger.debug(SIM.mpspath, s"EPOCH2SDF($splline) input=${ColString(colparam(3))} format=${ColString(colparam(2))}")
             for {fmt <- ColString(colparam(2))} {
               val sdf = new SimpleDateFormat(fmt)
               val timezone = if (colparam.length > 4) ColString(colparam(4)) else None
@@ -109,19 +101,16 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              SM.error(warningString("EPOCH2SDF", Option(e)))
-              colerror = true
+              throw new Exception(warningString("EPOCH2SDF", Option(e)))
           }
 
         case DATEDIFF =>
           if(colparam.size != 5){
-            SM.error(s"COLCALC must have at least five parameters, l# $splline")
-            colerror = true
+            throw new Exception(s"COLCALC must have at least five parameters, l# $splline")
           } else {
             val requiredFormat = ColString(colparam(4))
             if (requiredFormat.isEmpty) {
-              SM.error(s"Incorrect parameters. Empty required format $requiredFormat, l# $splline")
-              colerror = true
+              throw new Exception(s"Incorrect parameters. Empty required format $requiredFormat, l# $splline")
             } else {
               logger.debug(s"Rrequired format $requiredFormat")
               datediff_between = requiredFormat.map {
@@ -131,8 +120,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
                 case "d" => ChronoUnit.DAYS.between _
                 case "y" => ChronoUnit.YEARS.between _
                 case _ =>
-                  SM.error(s"Incorrect required format $requiredFormat, l# $splline")
-                  colerror = true
+                  throw new Exception(s"Incorrect required format $requiredFormat, l# $splline")
                   null
               }
             }
@@ -158,24 +146,22 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(ex) =>
-              SM.error(warningString("ADJYEAR", Option(ex)))
-              colerror = true
+              throw new Exception(warningString("ADJYEAR", Option(ex)))
           }
 
         case _ =>
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     Unit =>
       val func: Funcs = colparam(1).func
-      logger.debug(SM.mpspath, "COLCALC(" + splline + ") function Value = " + func)
+      logger.debug(SIM.mpspath, "COLCALC(" + splline + ") function Value = " + func)
       func match {
         case STR2TIME =>
           try {
-            SM.warning(s"STR2TIME logline=$SM.lineno NOT SUPPORTED -- use SDF2EPOCH")
+            SIM.warning(s"STR2TIME logline=${SIM.lineno} NOT SUPPORTED -- use SDF2EPOCH")
             ColString(colparam(2)).foreach { value =>
               colparam.head.setValue(LongValue(dateFormat.parse(value)))
             }
@@ -185,12 +171,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
 
         case SDF2EPOCH =>
           try {
-            logger.debug(SM.mpspath, s"SDF2EPOCH($splline) input=${ColString(colparam(3))}")
+            logger.debug(SIM.mpspath, s"SDF2EPOCH($splline) input=${ColString(colparam(3))}")
             for { x <- ColString(colparam(2)); y <- ColString(colparam(3)) }
               colparam.head.setValue(LongValue(sdf2epoch_sdfMap(x).parse(y).getTime))
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("SDF2EPOCH", Option(e)))
+              logger.warning(SIM.mpspath, warningString("SDF2EPOCH", Option(e)))
           }
 
         case DATEDIFF =>
@@ -212,12 +198,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
 
             }catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("DATEDIFF", Option(e)))
+              logger.warning(SIM.mpspath, warningString("DATEDIFF", Option(e)))
           }
 
         case EPOCH2SDF =>
           try {
-            logger.debug(SM.mpspath, s"EPOCH2SDF($splline) input=${ColString(colparam(3))} format=${ColString(colparam(2))}")
+            logger.debug(SIM.mpspath, s"EPOCH2SDF($splline) input=${ColString(colparam(3))} format=${ColString(colparam(2))}")
             for {
               x <- ColString(colparam(2))
               y <- ColString(colparam(3))
@@ -230,15 +216,15 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
               val epoch = if (value / (MAX_1970_EPOCH * 1000) <= 0) value * 1000 else value
               val date = new Date(epoch)
               colparam.head.setValue(StringValue(sdf.format(date)))
-              logger.debug(SM.mpspath, s"EPOCH2SDF date($date), sdf(${ColString(colparam(2))}), newdate(${sdf.format(date)})")
+              logger.debug(SIM.mpspath, s"EPOCH2SDF date($date), sdf(${ColString(colparam(2))}), newdate(${sdf.format(date)})")
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("EPOCH2SDF", Option(e)))
+              logger.warning(SIM.mpspath, warningString("EPOCH2SDF", Option(e)))
           }
 
         case STR2MMYY => // Deprecated
-          SM.warning(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2TIME & TIME2MONTH")
+          SIM.warning(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2TIME & TIME2MONTH")
           try {
             ColString(colparam(2)).foreach { src =>
               val x = dateFormat.parse(src)
@@ -252,12 +238,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("STR2MMYY", Option(e)))
+              logger.warning(SIM.mpspath, warningString("STR2MMYY", Option(e)))
           }
 
         case TIME2QTR =>
           try {
-            logger.debug(SM.mpspath, "TIME2QTR(" + splline + ")")
+            logger.debug(SIM.mpspath, "TIME2QTR(" + splline + ")")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(Calendar.MONTH, cal.get(Calendar.MONTH) / 4 * 4)
@@ -270,13 +256,13 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2QTR", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2QTR", Option(e)))
           }
 
         case TIME2MONTH =>
           try {
             ColString(colparam(2)).foreach { src =>
-              logger.debug(SM.mpspath, "TIME2MTH(" + splline + ")")
+              logger.debug(SIM.mpspath, "TIME2MTH(" + splline + ")")
               cal.setTimeInMillis(src.toLong)
               cal.set(DAY_OF_MONTH, 1) // What is the EPOCH of the first day of the month
               cal.set(HOUR_OF_DAY, 0)
@@ -288,13 +274,13 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2MONTH", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2MONTH", Option(e)))
           }
 
         case TIME2WEEK =>
           try {
             ColString(colparam(2)).foreach { src =>
-              logger.debug(SM.mpspath, "TIME2WEEK")
+              logger.debug(SIM.mpspath, "TIME2WEEK")
               cal.setTimeInMillis(src.toLong)
               cal.set(DAY_OF_WEEK, SUNDAY)
               cal.set(HOUR_OF_DAY, 0)
@@ -306,12 +292,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2WEEK", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2WEEK", Option(e)))
           }
 
         case TIME2DAY =>
           try {
-            logger.debug(SM.mpspath, "TIME2DAY")
+            logger.debug(SIM.mpspath, "TIME2DAY")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(HOUR_OF_DAY, 0)
@@ -323,12 +309,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2DAY", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2DAY", Option(e)))
           }
 
         case TIME230DAY =>
           try {
-            logger.debug(SM.mpspath, "TIME230DAY")
+            logger.debug(SIM.mpspath, "TIME230DAY")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(DAY_OF_YEAR, cal.get(DAY_OF_YEAR) / 30 * 30)
@@ -341,12 +327,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME230DAY", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME230DAY", Option(e)))
           }
 
         case TIME2HOUR =>
           try {
-            logger.debug(SM.mpspath, "TIME2HOUR")
+            logger.debug(SIM.mpspath, "TIME2HOUR")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(MINUTE, 0)
@@ -357,12 +343,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2HOUR", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2HOUR", Option(e)))
           }
 
         case TIME210MIN =>
           try {
-            logger.debug(SM.mpspath, "TIME210MIN")
+            logger.debug(SIM.mpspath, "TIME210MIN")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(MINUTE, cal.get(MINUTE) / 10 * 10)
@@ -373,12 +359,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME210MIN", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME210MIN", Option(e)))
           }
 
         case TIME2MIN =>
           try {
-            logger.debug(SM.mpspath, "TIME2MIN")
+            logger.debug(SIM.mpspath, "TIME2MIN")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(SECOND, 0)
@@ -388,12 +374,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME2MIN", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME2MIN", Option(e)))
           }
 
         case TIME24HOUR =>
           try {
-            logger.debug(SM.mpspath, "TIME210MIN")
+            logger.debug(SIM.mpspath, "TIME210MIN")
             ColString(colparam(2)).foreach { src =>
               cal.setTimeInMillis(src.toLong)
               cal.set(HOUR_OF_DAY, cal.get(HOUR_OF_DAY) / 4 * 4)
@@ -405,7 +391,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("TIME24HOUR", Option(e)))
+              logger.warning(SIM.mpspath, warningString("TIME24HOUR", Option(e)))
           }
 
         case ADJYEAR =>
@@ -424,7 +410,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
               var adjyear = 0
 
               if (obs_epoch == 0 || evt_date_str.isEmpty)
-                logger.warning(SM.mpspath, warningString("ADJYEAR: Either epoch or date string is empty", None))
+                logger.warning(SIM.mpspath, warningString("ADJYEAR: Either epoch or date string is empty", None))
               else {
 
                 // Get obs year, month and date
@@ -459,7 +445,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("ADJYEAR", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("ADJYEAR", Option(ex)))
           }
 
         case PLUS =>
@@ -476,7 +462,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             dstCol.setValue(numericPerColtype(dstDdl, dst))
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("PLUS", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("PLUS", Option(ex)))
           }
 
         case MINUS =>
@@ -492,7 +478,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("MINUS", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("MINUS", Option(ex)))
           }
 
         case TIMES =>
@@ -507,19 +493,19 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           }catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("TIMES", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("TIMES", Option(ex)))
           }
 
         case DIVIDEBY =>
           try {
             ColString(colparam(2)).foreach { src =>
-              logger.debug(SM.mpspath, s"DIVIDEBY ${ColString(colparam(2))}")
+              logger.debug(SIM.mpspath, s"DIVIDEBY ${ColString(colparam(2))}")
               var dst: Double = NumericDouble(src)
               val dstCol = colparam.head.column
               val dstDdl = dstCol.typ.toString + dstCol.len.toString
               if (dst == 0) {
                 val msg = "Divide By Zero Error"
-                logger.warning(SM.mpspath, warningString(msg, None))
+                logger.warning(SIM.mpspath, warningString(msg, None))
               } else {
                 for {
                   x <- colparam.drop(3)
@@ -532,7 +518,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           }catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("DIVIDEBY", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("DIVIDEBY", Option(ex)))
           }
 
         case CONCAT =>
@@ -546,7 +532,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
           try {
             if (ColString(colparam(2)).isEmpty || ColString(colparam(3)).isEmpty) {
               val msg = "XTOPOWY: X or Y is empty. X=" + ColString(colparam(2)) + ", Y=" + ColString(colparam(3))
-              logger.warning(SM.mpspath, warningString(msg, None))
+              logger.warning(SIM.mpspath, warningString(msg, None))
             } else {
               for {
                 x <- ColString(colparam(2))
@@ -563,7 +549,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           }catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("XTOPOWY", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("XTOPOWY", Option(ex)))
           }
 
         case HEX2DEC =>
@@ -578,7 +564,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           }catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("HEX2DEC", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("HEX2DEC", Option(ex)))
           }
 
         case INT =>
@@ -588,7 +574,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           }catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("INT", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("INT", Option(ex)))
           }
 
         case STR2SUM =>
@@ -601,7 +587,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             colparam.head.setValue(LongValue(value))
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("STR2SUM", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("STR2SUM", Option(ex)))
           }
 
         case LENGTH =>
@@ -611,7 +597,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("LENGTH", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("LENGTH", Option(ex)))
           }
 
         case UC =>
@@ -621,7 +607,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(ex) =>
-              logger.warning(SM.mpspath, warningString("UC", Option(ex)))
+              logger.warning(SIM.mpspath, warningString("UC", Option(ex)))
           }
 
         case LC =>
@@ -635,7 +621,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("MD5", Option(e)))
+              logger.warning(SIM.mpspath, warningString("MD5", Option(e)))
           }
 
         case ZEROPAD =>
@@ -653,7 +639,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("ZEROPAD", Option(e)))
+              logger.warning(SIM.mpspath, warningString("ZEROPAD", Option(e)))
           }
 
         case RANDINT =>
@@ -667,7 +653,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("HEX2BIN", Option(e)))
+              logger.warning(SIM.mpspath, warningString("HEX2BIN", Option(e)))
           }
 
         case BIN2HEX =>
@@ -677,11 +663,11 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
             }
           } catch {
             case NonFatal(e) =>
-              logger.warning(SM.mpspath, warningString("BIN2HEX", Option(e)))
+              logger.warning(SIM.mpspath, warningString("BIN2HEX", Option(e)))
           }
 
         case _ =>
-          SM.warning(s"COLCALC function $func not yet implemented, l# $splline")
+          SIM.warning(s"COLCALC function $func not yet implemented, l# $splline")
       }
   }
 }

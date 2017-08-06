@@ -20,15 +20,10 @@ class ColAssert(colparam: Vector[ColumnParameter], op: String, param: String, sp
 
   def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLASSERT =>
-      val colerror =
-        if (!colparam.head.isInstanceOf[ColColumnParameter]) {
-          throw new Exception(s"COLASSERT requires ONE column, l# $splline")
-          true
-        } else {
-          false
-        }
-      if (colerror) empty
-      else exec
+      if (!colparam.head.isInstanceOf[ColColumnParameter]) {
+        throw new Exception(s"COLASSERT requires ONE column, l# $splline")
+      }
+      exec
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {

@@ -2,7 +2,6 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.core.parser.Ops._
 import ColOp.{ColColumnParameter, ColumnParameter}
-import com.glassbeam.scalar.core.parser.{ColOpSharables, SharedImmutables, SharedMutables}
 import com.glassbeam.scalar.model.{EmptyValue, Logger}
 
 import scala.collection.immutable.Vector
@@ -14,29 +13,25 @@ object ColCopy extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCopy(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int, SM: SharedImmutables, COS: ColOpSharables)
-  extends ColOpFunction(colparam, op, param, splline, SM, COS) {
+class ColCopy(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+  extends ColOpFunction(colparam, op, param, splline) {
 
-  def verify: PartialFunction[Ops, Unit => Unit] = {
+  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLCOPY(srcCol|literal, destCol1 [, destColN])
     case COLCOPY => // src-col, target-col, ...
-      var colerror = false
       if (colparam.size < 2) {
-        SM.error(s"COLCOPY must have more than one parameter, l# $splline")
-        colerror = true
+        throw new Exception(s"COLCOPY must have more than one parameter, l# $splline")
       } else {
         for (c <- colparam.tail)
           if (!c.isInstanceOf[ColColumnParameter]) {
-            SM.error(s"COLCOPY subsequent parameters must be COLUMN, l# $splline")
-            colerror = true
+            throw new Exception(s"COLCOPY subsequent parameters must be COLUMN, l# $splline")
           }
       }
-      if(colerror) PartialFunction.empty
-      else exec
+      exec
   }
 
-  private def exec: Unit => Unit = {
-    Unit =>
+  private def exec: (SharedImmutables, ColOpSharables) => Unit = {
+    (SM: SharedImmutables, COS: ColOpSharables) =>
       for {
         c <- colparam.tail
         if colparam.head.getValue.nonEmpty

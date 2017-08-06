@@ -15,13 +15,6 @@ package object colops extends Logger {
 
   val logger = Logging(this)
 
-  object SIM {
-    val mpspath = ""
-    def fatal: String => Unit = logger.info
-    def error: String => Unit = logger.info
-    def warning: String => Unit = logger.info
-  }
-
   def empty(s: SharedImmutables, c: ColOpSharables) = Unit
 
   class SharedImmutables extends Error {
@@ -34,19 +27,11 @@ package object colops extends Logger {
     lazy val (mfr, prod, sch) = mps
     lazy val mpspath = mfr + StartupConfig.filesep + prod + StartupConfig.filesep + sch
 
-    def fatal(ex: Throwable): Unit = fatal(ex.getMessage, ex)
-    def fatal(err: String): Unit = fatal(err, null)
-    def fatal(err: String, ex: Throwable): Unit = {
+    def fatal: String => Unit = logger.info
+    def error: String => Unit = logger.info
+    def warning: String => Unit = logger.info
 
-    }
-
-    def error(ex: Throwable): Unit = error(ex.getMessage, ex)
-    def error(err: String): Unit = error(err, null)
-    def error(err: String, ex: Throwable): Unit = {
-
-    }
-
-    def warning(err: String): Unit = warning(err)
+    def lineno = 0
   }
 
 
@@ -65,4 +50,5 @@ package object colops extends Logger {
   }
 
   val COS = new ColOpSharables
+  val SIM = new SharedImmutables
 }
