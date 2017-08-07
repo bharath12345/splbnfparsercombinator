@@ -98,12 +98,16 @@ package object lexer {
     2. A colop takes a vector of ColumnParameter as input. ColumnParameter is a set of types: String, Numeric, Regex, Column and ColumnFunction
 
     What to do:
-    2. Table has a list of ColOp's
-    3. ColOp has to be brought in but not with SharedImmutables and ColOpSharables
+    2. TableAST has a list of ColOp's
+    3. ColOp has the verification. Verify method also caches column operation specific stuff and returns a function (checkout its signature)
     4. Run the verification after creating of a ColOp object. And if the verify fails then throw exception
     5. Since TableAST is made of list of ColOp it has the execute() for things to work in the same old way
-
-    The ugly part is each ColOp creates all the operation objects - remove this by switching on columnOperation. Create only one object
+    6. In LCP's Table.scala, it will iterate the COLUMN (token) and create Column (which takes COLUMN in its constructor). Now,
+       Table.scala also has colop - during flushRow it simply calls the execute of these colop's. Now since in existing LCP, ColColumnParameter
+       has a reference to the Column it can EXTRACT value during execute. But now ColColumnParameter has a reference to COLUMN which does not
+       have data. So, during execute, each column operation class has to use the static COLUMN with no data to get hold of its
+       corresponding Column which has data. It can act on this. Since all Column's are present in ColOpSharables, AND ColOpSharables is
+       part of execute's incoming arguments, this lookup can work
    */
 
   case class COLUMNOPERATION(override val op: ColumnOps, override val param: String, override val splline: Int) extends ColOp(op, param, splline)
