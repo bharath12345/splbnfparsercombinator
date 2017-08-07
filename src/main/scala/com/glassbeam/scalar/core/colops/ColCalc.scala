@@ -156,6 +156,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
+      val column = getColumnForCOLUMN(colparam.head.column, COS)
       val func: Funcs = colparam(1).func
       logger.debug(SIM.mpspath, "COLCALC(" + splline + ") function Value = " + func)
       func match {
@@ -163,7 +164,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           try {
             SIM.warning(s"STR2TIME logline=${SIM.lineno} NOT SUPPORTED -- use SDF2EPOCH")
             ColString(colparam(2)).foreach { value =>
-              colparam.head.setValue(LongValue(dateFormat.parse(value)))
+              column.setValue(LongValue(dateFormat.parse(value)))
             }
           } catch {
             case NonFatal(e) =>
@@ -173,7 +174,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           try {
             logger.debug(SIM.mpspath, s"SDF2EPOCH($splline) input=${ColString(colparam(3))}")
             for { x <- ColString(colparam(2)); y <- ColString(colparam(3)) }
-              colparam.head.setValue(LongValue(sdf2epoch_sdfMap(x).parse(y).getTime))
+              column.setValue(LongValue(sdf2epoch_sdfMap(x).parse(y).getTime))
           } catch {
             case NonFatal(e) =>
               logger.warning(SIM.mpspath, warningString("SDF2EPOCH", Option(e)))
@@ -190,7 +191,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
                   case Some(function) => function(date1, date2)
                   case None => 0L
                 }
-                colparam.head.setValue(LongValue(diff))
+                column.setValue(LongValue(diff))
                 logger.debug(s"Recieved start date $startDateInMillSecs end date $endDateInMillSecs, diff = $diff")
               } else {
                 logger.warning(s"start date can't be greater than the end date. Recieved start date $startDateInMillSecs, end date $endDateInMillSecs")
@@ -215,7 +216,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               val MAX_1970_EPOCH = 99999999L
               val epoch = if (value / (MAX_1970_EPOCH * 1000) <= 0) value * 1000 else value
               val date = new Date(epoch)
-              colparam.head.setValue(StringValue(sdf.format(date)))
+              column.setValue(StringValue(sdf.format(date)))
               logger.debug(SIM.mpspath, s"EPOCH2SDF date($date), sdf(${ColString(colparam(2))}), newdate(${sdf.format(date)})")
             }
           } catch {
@@ -234,7 +235,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(MINUTE, 0)
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
-              colparam.head.setValue(LongValue(cal.getTimeInMillis))
+              column.setValue(LongValue(cal.getTimeInMillis))
             }
           } catch {
             case NonFatal(e) =>
@@ -252,7 +253,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =   LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -270,7 +271,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv = LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -288,7 +289,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv = LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -305,7 +306,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv = LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -323,7 +324,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -339,7 +340,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -355,7 +356,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -370,7 +371,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -387,7 +388,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               cal.set(SECOND, 0)
               cal.set(MILLISECOND, 0)
               val newv =LongValue(cal.getTimeInMillis)
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -441,7 +442,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               }
               if (adjyear <= 0)
                 adjyear = 1970
-              colparam.head.setValue(LongValue(adjyear))
+              column.setValue(LongValue(adjyear))
             }
           } catch {
             case NonFatal(ex) =>
@@ -451,15 +452,14 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case PLUS =>
           try {
             var dst: Double = 0
-            val dstCol = colparam.head.column
-            val dstDdl = dstCol.typ.toString + dstCol.len.toString
+            val dstDdl = column.typ.toString + column.len.toString
             for {
               m <- colparam.drop(2)
               n <- ColString(m)
             } {
               dst += NumericDouble(n)
             }
-            dstCol.setValue(numericPerColtype(dstDdl, dst))
+            column.setValue(numericPerColtype(dstDdl, dst))
           } catch {
             case NonFatal(ex) =>
               logger.warning(SIM.mpspath, warningString("PLUS", Option(ex)))
@@ -469,12 +469,11 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           try {
             ColString(colparam(2)).foreach { src =>
               var dst: Double = NumericDouble(src)
-              val dstCol = colparam.head.column
-              val dstDdl = dstCol.typ.toString + dstCol.len.toString
+              val dstDdl = column.typ.toString + column.len.toString
               for {m <- colparam.drop(3) ; n <- ColString(m)} {
                 dst -= NumericDouble(n)
               }
-              dstCol.setValue(numericPerColtype(dstDdl, dst))
+              column.setValue(numericPerColtype(dstDdl, dst))
             }
           } catch {
             case NonFatal(ex) =>
@@ -485,11 +484,10 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           try {
             ColString(colparam(2)).foreach { src =>
               var dst: Double = NumericDouble(src)
-              val dstCol = colparam.head.column
-              val dstDdl = dstCol.typ.toString + dstCol.len.toString
+              val dstDdl = column.typ.toString + column.len.toString
               for {m <- colparam.drop(3) ; n <- ColString(m)}
                 dst *= NumericDouble(n)
-              dstCol.setValue(numericPerColtype(dstDdl, dst))
+              column.setValue(numericPerColtype(dstDdl, dst))
             }
           }catch {
             case NonFatal(ex) =>
@@ -501,8 +499,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
             ColString(colparam(2)).foreach { src =>
               logger.debug(SIM.mpspath, s"DIVIDEBY ${ColString(colparam(2))}")
               var dst: Double = NumericDouble(src)
-              val dstCol = colparam.head.column
-              val dstDdl = dstCol.typ.toString + dstCol.len.toString
+              val dstDdl = column.typ.toString + column.len.toString
               if (dst == 0) {
                 val msg = "Divide By Zero Error"
                 logger.warning(SIM.mpspath, warningString(msg, None))
@@ -513,7 +510,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
                 } {
                   dst /= y.toDouble
                 }
-                dstCol.setValue(numericPerColtype(dstDdl, dst))
+                column.setValue(numericPerColtype(dstDdl, dst))
               }
             }
           }catch {
@@ -526,7 +523,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           for { x <- colparam.drop(2); y <- ColString(x)} {
             dst += y
           }
-          colparam.head.setValue(StringValue(dst))
+          column.setValue(StringValue(dst))
 
         case XTOPOWY =>
           try {
@@ -540,11 +537,11 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               } {
                 val dst: Double = pow(NumericDouble(x), NumericDouble(y))
                 val newv =
-                  if (colparam.head.typ == ColumnType.INTEGER || colparam.head.typ == ColumnType.LONG)
+                  if (column.typ == ColumnType.INTEGER || column.typ == ColumnType.LONG)
                     LongValue(dst.toLong)
                   else
                     DoubleValue(dst)
-                colparam.head.setValue(newv)
+                column.setValue(newv)
               }
             }
           }catch {
@@ -555,12 +552,11 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case HEX2DEC =>
           try {
             ColString(colparam(2)).foreach { src =>
-              val col = colparam.head.column
-              val x = col.len.toString() match {
+              val x = column.len.toString() match {
                 case "32" => Integer.parseInt(src, 16)
                 case _ => java.lang.Long.parseLong(src, 16)
               }
-              colparam.head.setValue(LongValue(x))
+              column.setValue(LongValue(x))
             }
           }catch {
             case NonFatal(ex) =>
@@ -570,7 +566,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case INT =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(LongValue(NumericDouble(src).round))
+              column.setValue(LongValue(NumericDouble(src).round))
             }
           }catch {
             case NonFatal(ex) =>
@@ -584,7 +580,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               u <- ColString(colparam(2))
               v <- u.split(' ')
             } value += v.toLong
-            colparam.head.setValue(LongValue(value))
+            column.setValue(LongValue(value))
           } catch {
             case NonFatal(ex) =>
               logger.warning(SIM.mpspath, warningString("STR2SUM", Option(ex)))
@@ -593,7 +589,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case LENGTH =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(LongValue(src.length))
+              column.setValue(LongValue(src.length))
             }
           } catch {
             case NonFatal(ex) =>
@@ -603,7 +599,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case UC =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(StringValue(src.toUpperCase))
+              column.setValue(StringValue(src.toUpperCase))
             }
           } catch {
             case NonFatal(ex) =>
@@ -612,12 +608,12 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
 
         case LC =>
           ColString(colparam(2)).foreach { src =>
-            colparam.head.setValue(StringValue(src.toLowerCase))
+            column.setValue(StringValue(src.toLowerCase))
           }
         case MD5 =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(StringValue(DigestUtils.md5Hex(src))) //akka.util.Crypt.md5(src)
+              column.setValue(StringValue(DigestUtils.md5Hex(src))) //akka.util.Crypt.md5(src)
             }
           } catch {
             case NonFatal(e) =>
@@ -635,7 +631,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
               val newv =
                 if (hhh.head == 'L') StringValue(("0" * pad) + src)
                 else StringValue(src + ("0" * pad))
-              colparam.head.setValue(newv)
+              column.setValue(newv)
             }
           } catch {
             case NonFatal(e) =>
@@ -643,13 +639,13 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           }
 
         case RANDINT =>
-          colparam.head.setValue(LongValue((new Random).nextLong()))
+          column.setValue(LongValue((new Random).nextLong()))
 
         // Range:Long
         case HEX2BIN =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(StringValue(hexToBinary(src)))
+              column.setValue(StringValue(hexToBinary(src)))
             }
           } catch {
             case NonFatal(e) =>
@@ -659,7 +655,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
         case BIN2HEX =>
           try {
             ColString(colparam(2)).foreach { src =>
-              colparam.head.setValue(StringValue(binaryToHex(src)))
+              column.setValue(StringValue(binaryToHex(src)))
             }
           } catch {
             case NonFatal(e) =>

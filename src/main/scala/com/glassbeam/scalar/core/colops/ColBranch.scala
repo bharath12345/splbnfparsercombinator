@@ -14,6 +14,6 @@ class ColBranch(colparam: Vector[ColumnParameter], op: ColumnOps, param: String,
   def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLBRANCH =>
       throw new Exception(s"COLBRANCH not yet implemented, l# $splline")
-      PartialFunction.empty
+      empty
   }
 }

@@ -15,6 +15,7 @@ class Column(private val table_name: Spltable, private val position: Int, val co
   var sess_count = 0
   val ddl = getDDL(column.ddl.get)
   val typ: ColumnType = ColumnType.get(column.column_name, ddl, splline)
+  var len: Int = 0
 
   def getDDL(ddl: String): Option[(String, Int, String, String)] = None
 

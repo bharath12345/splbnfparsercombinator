@@ -28,7 +28,8 @@ class ColAssert(colparam: Vector[ColumnParameter], op: ColumnOps, param: String,
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
-      if (colparam.head.getValue.isEmpty || colparam.head.getValue.toString.isEmpty) {
+      val column = getColumnForCOLUMN(colparam.head.column, COS)
+      if (column.getValue.isEmpty || column.getValue.toString.isEmpty) {
         val msg = s"COLASSERT (${colparam.head.name}). splline = $splline"
         logger.error(SM.mpspath, msg, true)
       }
