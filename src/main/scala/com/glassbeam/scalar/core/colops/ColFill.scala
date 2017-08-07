@@ -24,9 +24,11 @@ class ColFill(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
-      for (o <- colparam)
-        if (o.getValue.isEmpty)
-          o.setValue(o.getPrev)
-        else o.setPrev(o.getValue)
+      for (o <- colparam) {
+        val column = getColumnForCOLUMN(o.column, COS)
+        if (column.getValue.isEmpty)
+          column.setValue(column.getPreviousValue)
+        else column.setPreviousValue(column.getValue)
+      }
   }
 }

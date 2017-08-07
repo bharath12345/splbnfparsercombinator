@@ -57,7 +57,8 @@ class ColHierarchy(colparam: Vector[ColumnParameter], op: ColumnOps, param: Stri
             reg findFirstMatchIn src match {
               case Some(m) =>
                 val cdl = colparam.drop(2 + levels)
-                cdl(i).column.setValue(StringValue(m.group(1)))
+                val column = getColumnForCOLUMN(cdl(i).column, COS)
+                column.setValue(StringValue(m.group(1)))
                 logger.debug(SM.mpspath, s"COLHIERARCHY MATCH OK: " + errr(reg, i))
                 i match {
                   case 0 =>
@@ -65,11 +66,15 @@ class ColHierarchy(colparam: Vector[ColumnParameter], op: ColumnOps, param: Stri
                     hArray(i) = m.group(1)
                   case j if 1 until (levels - 2) contains j =>
                     hArray(i) = m.group(1)
-                    for (k <- 0 until i)
-                      cdl(k).column.setValue(StringValue(hArray(k)))
+                    for (k <- 0 until i) {
+                      val columnk = getColumnForCOLUMN(cdl(k).column, COS)
+                      columnk.setValue(StringValue(hArray(k)))
+                    }
                   case levelsless =>
-                    for (k <- 0 until i)
-                      cdl(k).column.setValue(StringValue(hArray(k)))
+                    for (k <- 0 until i) {
+                      val columnk = getColumnForCOLUMN(cdl(k).column, COS)
+                      columnk.setValue(StringValue(hArray(k)))
+                    }
                 }
                 true
               case None =>

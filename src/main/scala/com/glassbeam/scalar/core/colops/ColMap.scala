@@ -60,7 +60,9 @@ class ColMap(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, sp
           }
         } while (!found && p < colparam.size)
         if (p + 1 < colparam.size) {
-          colparam.head.column.setValue(colparam(p + 1).getValue)
+          val column = getColumnForCOLUMN(colparam.head.column, COS)
+          val colp = getColumnForCOLUMN(colparam(p + 1).column, COS)
+          column.setValue(colp.getValue)
         }
       } catch {
         case NonFatal(e) =>

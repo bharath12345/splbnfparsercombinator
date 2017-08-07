@@ -29,7 +29,6 @@ class ColElse(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
       COS.cases match {
         case NOCASE =>
           logger.error(SM.mpspath, "WHEN/ELSE without CASE", true)
-          SM.warning(s"(COLELSE) without CASE, l# $splline")
 
         case CASEWHEN =>
           COS.cases = CASETHEN

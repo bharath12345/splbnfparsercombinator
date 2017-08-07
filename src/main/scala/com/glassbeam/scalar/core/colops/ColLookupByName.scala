@@ -23,9 +23,9 @@ class ColLookupByName(colparam: Vector[ColumnParameter], op: ColumnOps, param: S
     case COLLOOKUPBYNAME =>
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
         throw new Exception("the lookup target is not defined as a column")
-      } else
+      } else {
         logger.info("COL-LOOKUP-BY-NAME definition found")
-
+      }
       exec
   }
 
@@ -33,7 +33,8 @@ class ColLookupByName(colparam: Vector[ColumnParameter], op: ColumnOps, param: S
     (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
         val lookupColumn = ColLookUpCache.lookupValueOfKey(SM.mfr + "/" + SM.prod + "/" + SM.sch, colparam(1).toString())
-        colparam.head.column.setValue(StringValue(lookupColumn.get))
+        val column = getColumnForCOLUMN(colparam.head.column, COS)
+        column.setValue(StringValue(lookupColumn.get))
       } catch {
         case NonFatal(e) =>
           logger.error(e, SM.mpspath, warningString("COLLOOKUPBYNAME", Option(e)), true)

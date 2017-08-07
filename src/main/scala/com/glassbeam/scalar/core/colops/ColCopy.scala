@@ -32,11 +32,13 @@ class ColCopy(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
+      val headColumn = getColumnForCOLUMN(colparam.head.column, COS)
       for {
         c <- colparam.tail
-        if colparam.head.getValue.nonEmpty
+        if headColumn.getValue.nonEmpty
       } {
-        c.column.setValue(colparam.head.getValue)
+        val destCol = getColumnForCOLUMN(c.column, COS)
+        destCol.setValue(colparam.head.getValue)
         //logger.debug(SM.mpspath, s"COLCOPY: table = ${COS.table_name}, col = ${c.name}, value = ${c.getValue}")
       }
   }

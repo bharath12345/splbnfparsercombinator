@@ -36,14 +36,15 @@ class ColCount(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
-        if(colparam.head.getValue.isEmpty) {
+        val headColumn = getColumnForCOLUMN(colparam.head.column, COS)
+        if(headColumn.getValue.isEmpty) {
           logger.error(SM.mpspath, s"Colcount on empty value. splline = $splline", true)
         } else {
-          val src = DataValue.getStringValue(colparam.head.getValue)
+          val src = DataValue.getStringValue(headColumn.getValue)
           val p = colparam(1)
           val found = if (matchFound(p.regex, src)) true else false
           if (found) {
-            val column = colparam(2).column
+            val column = getColumnForCOLUMN(colparam(2).column, COS)
             column.sess_count = column.sess_count + 1
             column.setValue(LongValue(column.sess_count))
           }

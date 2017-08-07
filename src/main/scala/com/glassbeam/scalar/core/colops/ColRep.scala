@@ -55,7 +55,8 @@ class ColRep(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, sp
           case StringValue(s) => s
         }
         val value = rx.replaceAllIn(replacement, y)
-        colparam(2).column.setValue(StringValue(value))
+        val column = getColumnForCOLUMN(colparam(2).column, COS)
+        column.setValue(StringValue(value))
       }
   }
 }

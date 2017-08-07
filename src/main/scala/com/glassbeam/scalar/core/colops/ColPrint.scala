@@ -28,7 +28,8 @@ class ColPrint(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, 
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
-      val value: String = if(colparam.head.getValue.isEmpty) "EMPTY" else colparam.head.getValue.toString
+      val column = getColumnForCOLUMN(colparam.head.column, COS)
+      val value: String = if(column.getValue.isEmpty) "EMPTY" else column.getValue.toString
       logger.debug(SM.mpspath, s"COLPRINT (${colparam.head.name}) = $value")
   }
 }

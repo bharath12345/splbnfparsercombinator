@@ -17,15 +17,16 @@ class ColDrop(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
       for (p <- colparam)
         if (!p.isInstanceOf[ColColumnParameter]) {
           throw new Exception(s"COLDROP only takes COLUMN parameters, l# $splline")
-        } else
-          p.persist(false)
+        }
       exec
   }
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
-      for (o <- colparam)
-        o.persist(false)
+      for (o <- colparam) {
+        val column = getColumnForCOLUMN(o.column, COS)
+        column.persist = false
+      }
   }
 
 }

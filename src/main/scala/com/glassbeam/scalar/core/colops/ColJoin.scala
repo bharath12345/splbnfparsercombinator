@@ -29,6 +29,7 @@ class ColJoin(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
       var value: String = ""
       for {x <- colparam.tail; y <- ColString(x)}
         value += y
-      colparam.head.setValue(StringValue(value))
+      val column = getColumnForCOLUMN(colparam.head.column, COS)
+      column.setValue(StringValue(value))
   }
 }

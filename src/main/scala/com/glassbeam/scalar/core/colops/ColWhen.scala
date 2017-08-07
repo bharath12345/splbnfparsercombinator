@@ -42,7 +42,8 @@ class ColWhen(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
 
         case CASEWHEN =>
           def matchString() = {
-            colparam.head.getValue match {
+            val column = getColumnForCOLUMN(colparam.head.column, COS)
+            column.getValue match {
               case StringValue(s) => matchFound(colparam(1).regex, s)
               case _ => false
             }

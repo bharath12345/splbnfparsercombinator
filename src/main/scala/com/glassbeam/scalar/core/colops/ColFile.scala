@@ -14,6 +14,6 @@ class ColFile(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
   def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLFILE =>
       throw new Exception(s"COLFILE not yet implemented, l# $splline")
-      PartialFunction.empty
+      empty
   }
 }

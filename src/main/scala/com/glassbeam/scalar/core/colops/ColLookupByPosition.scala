@@ -41,7 +41,8 @@ class ColLookupByPosition(colparam: Vector[ColumnParameter], op: ColumnOps, para
             val lookupColumn = ColLookUpCache.lookupValueOfKey(
               SM.mfr + "/" + SM.prod + "/" + SM.sch,
               colparam(1).toString().toCharArray()(position) + "", position)
-            colparam.head.column.setValue(StringValue(lookupColumn.get))
+            val column = getColumnForCOLUMN(colparam.head.column, COS)
+            column.setValue(StringValue(lookupColumn.get))
           }
         }
       } catch {
