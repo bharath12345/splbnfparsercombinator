@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core
 
-import com.glassbeam.scalar.core.parser.CASES
+import com.glassbeam.scalar.core.parser.{CASES, Column}
 import com.glassbeam.scalar.model.{Logger, StartupConfig}
 import com.glassbeam.scalar.model.types.{Customer, Spltable}
 
@@ -46,7 +46,7 @@ package object colops extends Logger {
 
     protected var solrts: Long = 0L
 
-    val table_name: Spltable
+    val table_name: Spltable = null
   }
 
   val COS = new ColOpSharables

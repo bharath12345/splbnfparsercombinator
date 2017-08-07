@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
   * Created by pallab on 12/27/16.
   */
 
-object RowDrop extends Logger {
+/*object RowDrop extends Logger {
   private final lazy val logger = Logging(this)
 }
 
@@ -75,4 +75,4 @@ class RowDrop(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           }
       }
   }
-}
+}*/

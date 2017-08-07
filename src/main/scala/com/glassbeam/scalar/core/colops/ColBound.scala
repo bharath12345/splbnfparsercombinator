@@ -40,56 +40,59 @@ class ColBound(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
       try {
+        val column = getColumnForCOLUMN(colparam.head.column, COS)
         val t =
           Methods.withName(ColString(colparam(1)).get) match {
             case FIRST =>
               for {
                 src <- ColString(colparam(2))
-                if colparam.head.getValue.isEmpty || colparam.head.getValue.toString.isEmpty
-              } colparam.head.column.setValue(StringValue(src))
+                if column.getValue.isEmpty || column.getValue.toString.isEmpty
+              } column.setValue(StringValue(src))
 
             case LAST =>
               ColString(colparam(2)).foreach { src =>
-                colparam.head.column.setValue(StringValue(src))
+                column.setValue(StringValue(src))
               }
+
             case MIN =>
-              colparam.head.typ match {
+              column.typ match {
                 case ColumnType.STRING =>
                   ColString(colparam(2)).foreach { src =>
-                    if (colparam.head.getValue.nonEmpty && DataValue.getStringValue(colparam.head.getValue) > src)
-                      colparam.head.setValue(StringValue(src))
+                    if (column.getValue.nonEmpty && DataValue.getStringValue(column.getValue) > src)
+                      column.setValue(StringValue(src))
                   }
                 case ColumnType.INTEGER | ColumnType.LONG =>
                   ColString(colparam(2)).foreach { src =>
                     val n = NumericLong(src)
-                    if (colparam.head.getValue.nonEmpty && NumericLong(DataValue.getStringValue(colparam.head.getValue)) > n)
-                      colparam.head.setValue(LongValue(n))
+                    if (column.getValue.nonEmpty && NumericLong(DataValue.getStringValue(column.getValue)) > n)
+                      column.setValue(LongValue(n))
                   }
                 case ColumnType.FLOAT | ColumnType.DOUBLE =>
                   ColString(colparam(2)).foreach { src =>
                     val d = NumericDouble(src)
-                    if (colparam.head.getValue.nonEmpty && NumericDouble(DataValue.getStringValue(colparam.head.getValue)) > d)
-                      colparam.head.setValue(DoubleValue(d))
+                    if (column.getValue.nonEmpty && NumericDouble(DataValue.getStringValue(column.getValue)) > d)
+                      column.setValue(DoubleValue(d))
                   }
               }
+
             case MAX =>
-              colparam.head.typ match {
+              column.typ match {
                 case ColumnType.STRING =>
                   ColString(colparam(2)).foreach { src =>
-                    if (colparam.head.getValue.nonEmpty && DataValue.getStringValue(colparam.head.getValue) < src)
-                      colparam.head.setValue(StringValue(src))
+                    if (column.getValue.nonEmpty && DataValue.getStringValue(column.getValue) < src)
+                      column.setValue(StringValue(src))
                   }
                 case ColumnType.INTEGER | ColumnType.LONG =>
                   ColString(colparam(2)).foreach { src =>
                     val n = NumericLong(src)
-                    if (colparam.head.getValue.nonEmpty && NumericLong(DataValue.getStringValue(colparam.head.getValue)) < n)
-                      colparam.head.setValue(LongValue(n))
+                    if (column.getValue.nonEmpty && NumericLong(DataValue.getStringValue(column.getValue)) < n)
+                      column.setValue(LongValue(n))
                   }
                 case ColumnType.FLOAT | ColumnType.DOUBLE =>
                   ColString(colparam(2)).foreach { src =>
                     val d = NumericDouble(src)
-                    if (colparam.head.getValue.nonEmpty && NumericDouble(DataValue.getStringValue(colparam.head.getValue)) < d)
-                      colparam.head.setValue(DoubleValue(d))
+                    if (column.getValue.nonEmpty && NumericDouble(DataValue.getStringValue(column.getValue)) < d)
+                      column.setValue(DoubleValue(d))
                   }
               }
           }

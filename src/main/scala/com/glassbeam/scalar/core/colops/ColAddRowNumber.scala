@@ -9,7 +9,7 @@ import scala.collection.immutable.Vector
 /**
   * Created by bharadwaj on 01/12/16.
   */
-class ColAddRowNumber(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
+/*class ColAddRowNumber(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
@@ -29,4 +29,4 @@ class ColAddRowNumber(colparam: Vector[ColumnParameter], op: ColumnOps, param: S
           SM.warning(s"ADD_ROW_NUMBER($splline) NOT SUPPORTED")
       }
   }
-}
+}*/

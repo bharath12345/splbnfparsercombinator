@@ -48,7 +48,6 @@ package object lexer {
   sealed trait SplToken
 
   sealed trait SplSpecialToken extends SplToken
-  case class SPL_ERROR(error: String, linenum: Int) extends SplSpecialToken
   case object EXIT extends SplSpecialToken
 
   sealed trait SplNamespaceToken extends SplToken
@@ -111,7 +110,7 @@ package object lexer {
    */
 
   case class COLUMNOPERATION(override val op: ColumnOps, override val param: String, override val splline: Int) extends ColOp(op, param, splline)
-  case class ROWOPERATION(op: RowOps, param: String, splline: Int) // extends ColOp(op, param, splline)
+  case class ROWOPERATION(op: RowOps, param: String, splline: Int) extends SplTableToken // extends ColOp(op, param, splline)
   case class COLCASEOPERATION(override val op: ColumnOps, override val splline: Int, override val param: String = null) extends ColOp(op, param, splline)
 
   sealed trait SplObjectToken extends SplToken

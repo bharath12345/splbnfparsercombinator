@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
 /**
   * Created by bharadwaj on 01/12/16.
   */
-object ColRowSplit extends Logger {
+/*object ColRowSplit extends Logger {
   private final lazy val logger = Logging(this)
 }
 
@@ -53,4 +53,4 @@ class ColRowSplit(colparam: Vector[ColumnParameter], op: ColumnOps, param: Strin
           logger.error(e, SM.mpspath, warningString("ROWSPLIT", Option(e)), true)
       }
   }
-}
+}*/

@@ -4,6 +4,7 @@ import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, DoubleColumnParameter, LongColumnParameter, StringColumnParameter}
+import com.glassbeam.scalar.core.parser.{Column, Funcs}
 import com.glassbeam.scalar.core.spl.lexer.{COLUMN, SplTableToken}
 import com.glassbeam.scalar.model.ColumnType.ColumnType
 import com.glassbeam.scalar.model._
@@ -22,21 +23,13 @@ object ColOp extends Logger {
     val value: T
     require(value != null)
 
-    val typ: ColumnType = null
     val regex: Regex = null
     val column: COLUMN = null
     val func: Funcs = null
     val name: String = value.toString
 
     override def toString = value.toString
-
     def getValue: DataValue = EmptyValue
-    def setValue(dv: DataValue): Unit = Unit
-
-    def persist(p: Boolean): Unit = Unit
-
-    def getPrev: DataValue = EmptyValue
-    def setPrev(dv: DataValue): Unit = Unit
   }
 
   case class StringColumnParameter(override val value: StringValue) extends ColumnParameter {
@@ -61,17 +54,9 @@ object ColOp extends Logger {
 
   case class ColColumnParameter(override val value: COLUMN) extends ColumnParameter {
     type T = COLUMN
-    override val typ = value.typ
     override val name = value.column_name
     override val column = value
-
-    override def getValue = value.getValue
-    override def setValue(dv: DataValue) = value.setValue(dv)
-
-    override def persist(p: Boolean) = value.persist = p
-
-    override def getPrev = value.getPreviousValue
-    override def setPrev(dv: DataValue): Unit = value.setPreviousValue(dv)
+    override def getValue = throw new Exception(s"getValue called on raw column: $value")
   }
 
   case class ColFuncColumnParameter(override val value: Funcs) extends ColumnParameter {
@@ -84,6 +69,10 @@ object ColOp extends Logger {
 abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int) {
 
   def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit]
+
+  def getColumnForCOLUMN(incoming: COLUMN, COS: ColOpSharables): Column = {
+    COS.cols(incoming.column_name)
+  }
 
   // ToDo: This whole function is UGLY and needs to be REMOVED
   protected def ColString(x: ColumnParameter): Option[String] = {
@@ -142,57 +131,96 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
 
   import ColOp._
 
-  logger.debug(SIM.mpspath, s"ColOp: op = $op, param=$param, splline=$splline, table = ${COS.table_name}")
+  var execute: (SharedImmutables, ColOpSharables) => Unit = null
 
-  private var colparam = Vector.empty[ColumnParameter]
+  def verify(columns: List[COLUMN]): Unit = {
+    var colparam = Vector.empty[ColumnParameter]
 
-  if (op != CONSTRAIN && op != COLCASE && op != COLEND && op != COLELSE) {
-    val qp = Qsplitter(param)
-    logger.debug(SIM.mpspath, s"Qsplitter result=$qp")
-    for (p <- qp) {
-      colParam(p.trim)
+    def colParam(p: String) {
+      if (p == null || p.isEmpty) {
+        SIM.fatal(s"COL parameter empty, l# $splline")
+        colparam = colparam :+ StringColumnParameter(StringValue(""))
+      } else if (p.head == '\'') {
+        // 'literal'
+        colparam = colparam :+ StringColumnParameter(StringValue(stripQuotes(p)))
+      } else if (p.isLongNumber) {
+        // number-literal
+        colparam = colparam :+ LongColumnParameter(LongValue(p.toLong))
+      } else if(p.isDoubleNumber) {
+        colparam = colparam :+ DoubleColumnParameter(DoubleValue(p.toDouble))
+      } else if (p.head == '/') {
+        // /pattern/ /pattern/g
+        if (p.last == '/')
+          colparam = colparam :+ RegexColumnParameter(new Regex(stripQuotes(p)))
+        else
+          SIM.fatal(s"SPL regexes do not take Perl modifiers $p, l# $splline")
+      } else if (p.head.isUpper) {
+        // FUNC
+        try {
+          colparam = colparam :+ ColFuncColumnParameter(Funcs.withName(p))
+        } catch {
+          case e: java.util.NoSuchElementException =>
+            SIM.error(s"Unknown COLCALC function: $p, l# $splline")
+        }
+      } else if (p.head.isLower) {
+        // column
+        COS.cols.get(p) match {
+          case Some(c) =>
+            colparam = colparam :+ ColColumnParameter(c)
+          case None =>
+            SIM.fatal(s"COL parameter: column $p not found, l# $splline")
+            dumpCols
+        }
+      } else {
+        SIM.fatal(s"COL parameter ($p) does not match Literal/Numeric/Pattern/Func/Column, l# $splline")
+      }
     }
+
+    logger.debug(SIM.mpspath, s"ColOp: op = $op, param=$param, splline=$splline, table = ${COS.table_name}")
+    if (op != CONSTRAIN && op != COLCASE && op != COLEND && op != COLELSE) {
+      val qp = Qsplitter(param)
+      logger.debug(SIM.mpspath, s"Qsplitter result=$qp")
+      for (p <- qp) {
+        colParam(p.trim)
+      }
+    }
+    logger.debug(SIM.mpspath, s"colparam=$colparam")
+
+    val opInstance = op match {
+      //case ROWSPLIT => new ColRowSplit(colparam, op, param, splline)
+      //case ADD_ROW_NUMBER => new ColAddRowNumber(colparam, op, param, splline)
+      //case ROWDROP => new RowDrop(colparam, op, param, splline)
+      case COLFILL => new ColFill(colparam, op, param, splline)
+      case COLDROP => new ColDrop(colparam, op, param, splline)
+      case COLJOIN => new ColJoin(colparam, op, param, splline)
+      case COLREP => new ColRep(colparam, op, param, splline)
+      case COLSPLIT => new ColSplit(colparam, op, param, splline)
+      case COLHIERARCHY => new ColHierarchy(colparam, op, param, splline)
+      case COLCOPY => new ColCopy(colparam, op, param, splline)
+      case COLMAP => new ColMap(colparam, op, param, splline)
+      case COLCALC => new ColCalc(colparam, op, param, splline)
+      case COLBOUND => new ColBound(colparam, op, param, splline)
+      case CONSTRAIN => new Constrain(colparam, op, param, splline)
+      case COLASSERT => new ColAssert(colparam, op, param, splline)
+      case COLPRINT => new ColPrint(colparam, op, param, splline)
+      case COLCASE => new ColCase(colparam, op, param, splline)
+      case COLWHEN => new ColWhen(colparam, op, param, splline)
+      case COLELSE => new ColElse(colparam, op, param, splline)
+      case COLEND => new ColEnd(colparam, op, param, splline)
+      case COLLOOKUPBYNAME => new ColLookupByName(colparam, op, param, splline)
+      case COLLOOKUPBYPOSITION => new ColLookupByPosition(colparam, op, param, splline)
+      case COLCOUNT => new ColCount(colparam, op, param, splline)
+      case COLBRANCH => new ColBranch(colparam, op, param, splline)
+      case COLFILE => new ColFile(colparam, op, param, splline)
+      case COLPUSH => new ColPush(colparam, op, param, splline)
+      case x => throw new Exception(s"Unsupported column operation $x")
+    }
+
+    val vvv: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = opInstance.verify
+    if (!vvv.isDefinedAt(op)) throw new Exception(s"ColOp ($op) not understood, l# $splline")
+
+    execute = vvv(op)
   }
-  logger.debug(SIM.mpspath, s"colparam=$colparam")
-
-  val opInstance = op match {
-    //case ROWSPLIT => new ColRowSplit(colparam, op, param, splline)
-    //case ADD_ROW_NUMBER => new ColAddRowNumber(colparam, op, param, splline)
-    //case ROWDROP => new RowDrop(colparam, op, param, splline)
-    case COLFILL => new ColFill(colparam, op, param, splline)
-    case COLDROP => new ColDrop(colparam, op, param, splline)
-    case COLJOIN => new ColJoin(colparam, op, param, splline)
-    case COLREP => new ColRep(colparam, op, param, splline)
-    case COLSPLIT => new ColSplit(colparam, op, param, splline)
-    case COLHIERARCHY => new ColHierarchy(colparam, op, param, splline)
-    case COLCOPY => new ColCopy(colparam, op, param, splline)
-    case COLMAP => new ColMap(colparam, op, param, splline)
-    case COLCALC => new ColCalc(colparam, op, param, splline)
-    case COLBOUND => new ColBound(colparam, op, param, splline)
-    case CONSTRAIN => new Constrain(colparam, op, param, splline)
-    case COLASSERT => new ColAssert(colparam, op, param, splline)
-    case COLPRINT => new ColPrint(colparam, op, param, splline)
-    case COLCASE => new ColCase(colparam, op, param, splline)
-    case COLWHEN => new ColWhen(colparam, op, param, splline)
-    case COLELSE => new ColElse(colparam, op, param, splline)
-    case COLEND => new ColEnd(colparam, op, param, splline)
-    case COLLOOKUPBYNAME => new ColLookupByName(colparam, op, param, splline)
-    case COLLOOKUPBYPOSITION => new ColLookupByPosition(colparam, op, param, splline)
-    case COLCOUNT => new ColCount(colparam, op, param, splline)
-    case COLBRANCH => new ColBranch(colparam, op, param, splline)
-    case COLFILE => new ColFile(colparam, op, param, splline)
-    case COLPUSH => new ColPush(colparam, op, param, splline)
-    case x => throw new Exception(s"Unsupported column operation $x")
-  }
-
-  private val verify: PartialFunction[ColumnOps, Unit => Unit] = opInstance.verify
-
-  if (!verify.isDefinedAt(op))
-    SIM.fatal(s"ColOp ($op) not understood, l# $splline")
-
-  private val execute: Unit => Unit = verify(op)
-
-  //////////// Constructor ends here //////////////
 
   private def dumpCols {
     if (COS.cols.size < 1)
@@ -203,46 +231,6 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
         for (c <- COS.cols.tail)
           Cols += ", " + c._1
       logger.debug(SIM.mpspath, s"Columns: $Cols")
-    }
-  }
-
-  private def colParam(p: String) {
-    if (p == null || p.isEmpty) {
-      SIM.fatal(s"COL parameter empty, l# $splline")
-      colparam = colparam :+ StringColumnParameter(StringValue(""))
-    } else if (p.head == '\'') {
-      // 'literal'
-      colparam = colparam :+ StringColumnParameter(StringValue(stripQuotes(p)))
-    } else if (p.isLongNumber) {
-      // number-literal
-      colparam = colparam :+ LongColumnParameter(LongValue(p.toLong))
-    } else if(p.isDoubleNumber) {
-      colparam = colparam :+ DoubleColumnParameter(DoubleValue(p.toDouble))
-    } else if (p.head == '/') {
-      // /pattern/ /pattern/g
-      if (p.last == '/')
-        colparam = colparam :+ RegexColumnParameter(new Regex(stripQuotes(p)))
-      else
-        SIM.fatal(s"SPL regexes do not take Perl modifiers $p, l# $splline")
-    } else if (p.head.isUpper) {
-      // FUNC
-      try {
-        colparam = colparam :+ ColFuncColumnParameter(Funcs.withName(p))
-      } catch {
-        case e: java.util.NoSuchElementException =>
-          SIM.error(s"Unknown COLCALC function: $p, l# $splline")
-      }
-    } else if (p.head.isLower) {
-      // column
-      COS.cols.get(p) match {
-        case Some(c) =>
-          colparam = colparam :+ ColColumnParameter(c)
-        case None =>
-          SIM.fatal(s"COL parameter: column $p not found, l# $splline")
-          dumpCols
-      }
-    } else {
-      SIM.fatal(s"COL parameter ($p) does not match Literal/Numeric/Pattern/Func/Column, l# $splline")
     }
   }
 
@@ -291,12 +279,10 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
   def exec(): Unit = {
     try {
       logger.debug(SIM.mpspath, s"COLOP/exec ($op) got called for table = ${COS.table_name}, cases = ${COS.cases}")
-
       if ((COS.cases == NOCASE || COS.cases == CASETHEN) || (op == COLCASE || op == COLWHEN ||
         op == COLELSE || op == COLEND)) {
-        execute(())
+        execute(null, null)
       }
-
     } catch {
       case NonFatal(e) =>
         logger.error(e, SIM.mpspath, s"COLOP/exec ($op) failed for table = ${COS.table_name})", true)

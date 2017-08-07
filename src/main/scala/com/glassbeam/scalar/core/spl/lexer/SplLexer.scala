@@ -1,5 +1,9 @@
 package com.glassbeam.scalar.core.spl.lexer
 
+import com.glassbeam.scalar.core.spl.parser.SplTokenList
+
+import scala.collection.mutable.ListBuffer
+import scala.io.Source
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.language.postfixOps
@@ -67,15 +71,40 @@ object SplLexer extends RegexParsers {
   // ToDo: after finding table find its type token tokens till exit
   private val tokens: Parser[List[SplToken]] = phrase(rep1(specialTokens | namespaceTokens | iconTokens | tableTokens | objectTokens))
 
-  def apply(line: String, linenum: Int): Either[SPL_ERROR, SplTokenSuperType] = {
+  private def getColumns(all: List[SplToken]): List[COLUMN] = {
+    all.flatMap {
+      case x: COLUMN => Option(x)
+      case _ => None
+    }
+  }
+
+  private def get(line: String, linenum: Int, sofar: List[SplTokenSuperType]): SplTokenSuperType = {
     //println(s"line = $line")
     parse(tokens, line) match {
       case NoSuccess(msg, next) =>
-        println(Console.RED + s"linenum: #${linenum}, error: $msg, line = $line" + Console.RESET)
-        Left(SPL_ERROR(msg, linenum))
-      case Success(result, next) =>
+        throw new Exception(s"linenum: #${linenum}, error: $msg, line = $line")
+
+      case Success(resultList, next) =>
+        val result = resultList.head
         println(Console.GREEN + s"linenum: #${linenum}, success: " + result + Console.RESET)
-        Right(SplTokenSuperType(result.head, linenum))
+        result match {
+          case co: COLUMNOPERATION => co.verify(getColumns(sofar.map(_.splToken)))
+          //case ro: ROWOPERATION => ro.verify(sofar)
+          //case cco: COLCASEOPERATION => cco.verify(sofar)
+        }
+        SplTokenSuperType(result, linenum)
     }
+  }
+
+  def apply(source: Source): SplTokenList = {
+    val tokens = new ListBuffer[SplTokenSuperType]()
+    for {
+      (code, linenum) <- source.getLines().zipWithIndex
+      line = code.trim
+      if line.nonEmpty && line.head != '#'
+    } {
+      tokens += get(line, linenum, tokens.toList)
+    }
+    tokens.toList
   }
 }

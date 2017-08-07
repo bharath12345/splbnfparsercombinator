@@ -13,14 +13,7 @@ import scala.util.parsing.combinator.Parsers
   * Created by bharadwaj on 31/07/17.
   */
 object SplPC extends App {
-  val tokens: SplTokenList = (for {
-    (code, linenum) <- Source.fromResource("namespace_table.spl").getLines().zipWithIndex
-    line = code.trim
-    if line.nonEmpty && line.head != '#'
-  } yield {
-    SplLexer(line, linenum).right.get
-  }).toList
-
+  val tokens: SplTokenList = SplLexer(Source.fromResource("namespace_table.spl"))
   println(s"tokens = $tokens")
 
   val ast = SplParser(tokens)
