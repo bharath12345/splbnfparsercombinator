@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger, StringValue}
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -15,14 +15,14 @@ object ColHierarchy extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColHierarchy(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColHierarchy(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColHierarchy._
 
   private var hArray: Array[String] = null
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLHIERARCHY =>
       if (colparam.size < 4) {
         throw new Exception(s"COLHIERARCHY must have at least four parameters, l# $splline")

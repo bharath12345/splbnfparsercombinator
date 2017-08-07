@@ -2,12 +2,17 @@ package com.glassbeam.scalar.core
 
 package object parser {
 
-  object Ops extends Enumeration {
-    type Ops = Value
+  object ColumnOps extends Enumeration {
+    type ColumnOps = Value
     val COLFILL, COLDROP, COLJOIN, COLREP, COLSPLIT, COLHIERARCHY, COLCOPY, COLMAP, COLCALC, COLBOUND, COLBRANCH, COLFILE,
-    CONSTRAIN, ROWSPLIT, COLPUSH, COLASSERT, COLPRINT, ADD_ROW_NUMBER, COLCASE, COLWHEN, COLELSE, COLEND, COLLOOKUPBYNAME,
-    COLLOOKUPBYPOSITION, COLCOUNT, ROWDROP, Invalid = Value
+    CONSTRAIN, COLPUSH, COLASSERT, COLPRINT, COLCASE, COLWHEN, COLELSE, COLEND, COLLOOKUPBYNAME,
+    COLLOOKUPBYPOSITION, COLCOUNT, Invalid = Value
     // NOTE: Don't add any values without also adding to NRargs
+  }
+
+  object RowOps extends Enumeration {
+    type RowOps = Value
+    val ROWSPLIT, ROWDROP, ADD_ROW_NUMBER = Value
   }
 
   object Funcs extends Enumeration {

@@ -46,9 +46,9 @@ object SplLexer extends RegexParsers {
   private val multilineBreakOnUnmatch: Parser[MULTILINE_BREAK_ON_UNMATCH] = MultilineBreakOnUnmatchLexer.instance
   private val skip: Parser[SKIP] = SkipLexer.instance
   private val columns: Parser[COLUMN] = ColumnLexer.instance
-  private val colop: Parser[COLOP] = ColOpLexer.instance
-  private val rowop: Parser[ROWOP] = RowOpLexer.instance
-  private val colCaseOpsLexer: Parser[COPCASEOP] = ColCaseOpsLexer.instance
+  private val colop: Parser[COLUMNOPERATION] = ColOpLexer.instance
+  private val rowop: Parser[ROWOPERATION] = RowOpLexer.instance
+  private val colCaseOpsLexer: Parser[COLCASEOPERATION] = ColCaseOpsLexer.instance
 
   private val objectM: Parser[OBJECT] = ObjectLexer.instance
   private val label: Parser[LABEL] = LabelLexer.instance

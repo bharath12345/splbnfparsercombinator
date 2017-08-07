@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core.spl
 
-import com.glassbeam.scalar.core.colops.ColOpTrait
+import com.glassbeam.scalar.core.colops.ColOp
 import com.glassbeam.scalar.core.spl.lexer._
 import com.glassbeam.scalar.core.spl.parser.TokenSetType.TokenSetType
 
@@ -41,7 +41,7 @@ package object parser {
     }
   }
 
-  case class TableAST(namespace: NamespaceAST, table: TABLE, icon: ICON, columns: List[COLUMN], colops: List[ColOpTrait], linegrab: Option[LINEGRAB],
+  case class TableAST(namespace: NamespaceAST, table: TABLE, icon: ICON, columns: List[COLUMN], colops: List[ColOp], linegrab: Option[LINEGRAB],
                       setXmlNs: Option[SETXMLNAMESPACE], addContext: Option[ADDCONTEXT], multiline: Option[MULTILINE],
                       multilineBOU: Option[MULTILINE_BREAK_ON_UNMATCH], skip: Option[SKIP]) extends SplAST
 

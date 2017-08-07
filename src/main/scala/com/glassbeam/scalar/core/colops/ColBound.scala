@@ -2,7 +2,7 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.core.parser.Methods._
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.parser.Methods
 import ColOp.{ColColumnParameter, ColumnParameter}
 
@@ -16,11 +16,11 @@ object ColBound extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColBound(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColBound(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
   import ColBound._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLBOUND =>
       logger.debug(SIM.mpspath, s"COLBOUND, colparam = $colparam, param = $param")
       ColString(colparam(1)) match {

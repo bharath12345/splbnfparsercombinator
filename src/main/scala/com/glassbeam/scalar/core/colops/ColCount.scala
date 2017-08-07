@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger, LongValue}
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.utils.MatchUtils._
 
@@ -15,12 +15,12 @@ object ColCount extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCount(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColCount(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColCount._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLCOUNT =>
       if (colparam.size < 3) {
         throw new Exception(s"COLCOUNT must have Three parameters, l# $splline")

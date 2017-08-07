@@ -1,8 +1,8 @@
 package com.glassbeam.scalar.core.spl.lexer
 
 
-import com.glassbeam.scalar.core.parser.Ops
-import com.glassbeam.scalar.core.parser.Ops.Ops
+import com.glassbeam.scalar.core.parser.ColumnOps
+import com.glassbeam.scalar.core.parser.ColumnOps.ColumnOps
 
 import scala.util.matching.Regex
 
@@ -110,32 +110,32 @@ object SkipLexer extends RegexLexer {
 }
 
 object ColOpLexer extends RegexLexer {
-  override type T = COLOP
+  override type T = COLUMNOPERATION
 
   override protected val regex: Regex = """(COL\w+)\s*\((.*?)\)""".r
 
-  override protected def get(values: String*): COLOP = {
+  override protected def get(values: String*): COLUMNOPERATION = {
     val value_list = values.toList
-    val op: Ops = Ops.withName(value_list.head)
-    COLOP(op, value_list(1))
+    val op: ColumnOps = ColumnOps.withName(value_list.head)
+    COLUMNOPERATION(op, value_list(1))
   }
 }
 
 object RowOpLexer extends RegexLexer {
-  override type T = ROWOP
+  override type T = ROWOPERATION
 
   override protected val regex: Regex = """(ROW\w+)\s*\((.*?)\)""".r
 
-  override protected def get(values: String*): ROWOP = {
+  override protected def get(values: String*): ROWOPERATION = {
     val value_list = values.toList
-    ROWOP(value_list(0), value_list(1))
+    ROWOPERATION(value_list(0), value_list(1))
   }
 }
 
 object ColCaseOpsLexer extends RegexLexer {
-  override type T = COPCASEOP
+  override type T = COLCASEOPERATION
 
   override protected val regex: Regex = """(COLCASE|COLELSE|COLEND)""".r
 
-  override protected def get(values: String*): COPCASEOP = COPCASEOP(Ops.withName(values.head))
+  override protected def get(values: String*): COLCASEOPERATION = COLCASEOPERATION(ColumnOps.withName(values.head))
 }

@@ -2,9 +2,9 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Funcs._
-import com.glassbeam.scalar.core.parser.Ops._
-import com.glassbeam.scalar.core.parser._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, DoubleColumnParameter, LongColumnParameter, StringColumnParameter}
+import com.glassbeam.scalar.core.spl.lexer.{COLUMN, SplTableToken}
 import com.glassbeam.scalar.model.ColumnType.ColumnType
 import com.glassbeam.scalar.model._
 import com.glassbeam.scalar.utils.StripUtils._
@@ -24,7 +24,7 @@ object ColOp extends Logger {
 
     val typ: ColumnType = null
     val regex: Regex = null
-    val column: Column = null
+    val column: COLUMN = null
     val func: Funcs = null
     val name: String = value.toString
 
@@ -59,8 +59,8 @@ object ColOp extends Logger {
     override val regex = value
   }
 
-  case class ColColumnParameter(override val value: Column) extends ColumnParameter {
-    type T = Column
+  case class ColColumnParameter(override val value: COLUMN) extends ColumnParameter {
+    type T = COLUMN
     override val typ = value.typ
     override val name = value.column_name
     override val column = value
@@ -81,20 +81,9 @@ object ColOp extends Logger {
 
 }
 
-abstract class ColOp(val op: String, val param: String, val splline: Int) {
-  def exec(): Unit
+abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int) {
 
-  def flush(): Unit
-
-  val columnOperation: Any
-}
-
-
-abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int) {
-
-  import ColOp.logger
-
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit]
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit]
 
   // ToDo: This whole function is UGLY and needs to be REMOVED
   protected def ColString(x: ColumnParameter): Option[String] = {
@@ -149,21 +138,15 @@ abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: String, para
     s"splline = ${splline}, op = $op, param = $param, table = ${COS.table_name}, column params = $colparam. ${exceptionMsg(e)}"
 }
 
-trait ColOpTrait extends ColOp {
+abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) extends SplTableToken {
 
   import ColOp._
-
-  val op: String
-  val param: String
-  val splline: Int
-
-  override val columnOperation: Ops = Ops.withName(op)
 
   logger.debug(SIM.mpspath, s"ColOp: op = $op, param=$param, splline=$splline, table = ${COS.table_name}")
 
   private var colparam = Vector.empty[ColumnParameter]
 
-  if (columnOperation != CONSTRAIN && columnOperation != COLCASE && columnOperation != COLEND && columnOperation != COLELSE) {
+  if (op != CONSTRAIN && op != COLCASE && op != COLEND && op != COLELSE) {
     val qp = Qsplitter(param)
     logger.debug(SIM.mpspath, s"Qsplitter result=$qp")
     for (p <- qp) {
@@ -172,48 +155,42 @@ trait ColOpTrait extends ColOp {
   }
   logger.debug(SIM.mpspath, s"colparam=$colparam")
 
-  private val colAddRowNumber = new ColAddRowNumber(colparam, op, param, splline)
-  private val colAssert = new ColAssert(colparam, op, param, splline)
-  private val colBound = new ColBound(colparam, op, param, splline)
-  private val colCalc = new ColCalc(colparam, op, param, splline)
-  private val colCase = new ColCase(colparam, op, param, splline)
-  private val colCopy = new ColCopy(colparam, op, param, splline)
-  private val colCount = new ColCount(colparam, op, param, splline)
-  private val rowDrop = new RowDrop(colparam, op, param, splline)
-  private val colDrop = new ColDrop(colparam, op, param, splline)
-  private val colElse = new ColElse(colparam, op, param, splline)
-  private val colEnd = new ColEnd(colparam, op, param, splline)
-  private val colFill = new ColFill(colparam, op, param, splline)
-  private val colHierarchy = new ColHierarchy(colparam, op, param, splline)
-  private val colJoin = new ColJoin(colparam, op, param, splline)
-  private val colLookupByName = new ColLookupByName(colparam, op, param, splline)
-  private val colLookupByPosition = new ColLookupByPosition(colparam, op, param, splline)
-  private val colMap = new ColMap(colparam, op, param, splline)
-  private val colPrint = new ColPrint(colparam, op, param, splline)
-  private val colRep = new ColRep(colparam, op, param, splline)
-  private val colRowSplit = new ColRowSplit(colparam, op, param, splline)
-  private val colSplit = new ColSplit(colparam, op, param, splline)
-  private val colWhen = new ColWhen(colparam, op, param, splline)
-  private val constrain = new Constrain(colparam, op, param, splline)
+  val opInstance = op match {
+    //case ROWSPLIT => new ColRowSplit(colparam, op, param, splline)
+    //case ADD_ROW_NUMBER => new ColAddRowNumber(colparam, op, param, splline)
+    //case ROWDROP => new RowDrop(colparam, op, param, splline)
+    case COLFILL => new ColFill(colparam, op, param, splline)
+    case COLDROP => new ColDrop(colparam, op, param, splline)
+    case COLJOIN => new ColJoin(colparam, op, param, splline)
+    case COLREP => new ColRep(colparam, op, param, splline)
+    case COLSPLIT => new ColSplit(colparam, op, param, splline)
+    case COLHIERARCHY => new ColHierarchy(colparam, op, param, splline)
+    case COLCOPY => new ColCopy(colparam, op, param, splline)
+    case COLMAP => new ColMap(colparam, op, param, splline)
+    case COLCALC => new ColCalc(colparam, op, param, splline)
+    case COLBOUND => new ColBound(colparam, op, param, splline)
+    case CONSTRAIN => new Constrain(colparam, op, param, splline)
+    case COLASSERT => new ColAssert(colparam, op, param, splline)
+    case COLPRINT => new ColPrint(colparam, op, param, splline)
+    case COLCASE => new ColCase(colparam, op, param, splline)
+    case COLWHEN => new ColWhen(colparam, op, param, splline)
+    case COLELSE => new ColElse(colparam, op, param, splline)
+    case COLEND => new ColEnd(colparam, op, param, splline)
+    case COLLOOKUPBYNAME => new ColLookupByName(colparam, op, param, splline)
+    case COLLOOKUPBYPOSITION => new ColLookupByPosition(colparam, op, param, splline)
+    case COLCOUNT => new ColCount(colparam, op, param, splline)
+    case COLBRANCH => new ColBranch(colparam, op, param, splline)
+    case COLFILE => new ColFile(colparam, op, param, splline)
+    case COLPUSH => new ColPush(colparam, op, param, splline)
+    case x => throw new Exception(s"Unsupported column operation $x")
+  }
 
-  // these are empty
-  private val colBranch = new ColBranch(colparam, op, param, splline)
-  private val colPush = new ColPush(colparam, op, param, splline)
-  private val colFile = new ColFile(colparam, op, param, splline)
+  private val verify: PartialFunction[ColumnOps, Unit => Unit] = opInstance.verify
 
-  // ToDo: The order of these partial functions should be in the order of maximum usage
-  private val verify: PartialFunction[Ops, Unit => Unit] = (colCalc.verify orElse colRep.verify orElse colCopy.verify
-    orElse colSplit.verify orElse colFill.verify  orElse constrain.verify orElse colMap.verify
-    orElse colJoin.verify orElse colPrint.verify orElse colRowSplit.verify
-    orElse colCase.verify orElse colElse.verify orElse colEnd.verify orElse colWhen.verify orElse colCount.verify
-    orElse rowDrop.verify orElse colDrop.verify orElse colAssert.verify orElse colBound.verify
-    orElse colAddRowNumber.verify orElse colHierarchy.verify orElse colLookupByName.verify
-    orElse colLookupByPosition.verify orElse colBranch.verify orElse colPush.verify orElse colFile.verify )
+  if (!verify.isDefinedAt(op))
+    SIM.fatal(s"ColOp ($op) not understood, l# $splline")
 
-    if (!verify.isDefinedAt(columnOperation))
-    SIM.fatal(s"ColOp ($columnOperation) not understood, l# $splline")
-
-  private val execute: Unit => Unit = verify(columnOperation)
+  private val execute: Unit => Unit = verify(op)
 
   //////////// Constructor ends here //////////////
 
@@ -301,8 +278,8 @@ trait ColOpTrait extends ColOp {
     res.toList
   }
 
-  override def flush(): Unit = {
-    columnOperation match {
+  def flush(): Unit = {
+    op match {
       case COLCOUNT => //sess_count = 0 For each Session
         val column: Column = colparam(2).column
         column.sess_count = 0
@@ -311,18 +288,18 @@ trait ColOpTrait extends ColOp {
     }
   }
 
-  override def exec(): Unit = {
+  def exec(): Unit = {
     try {
-      logger.debug(SIM.mpspath, s"COLOP/exec ($columnOperation) got called for table = ${COS.table_name}, cases = ${COS.cases}")
+      logger.debug(SIM.mpspath, s"COLOP/exec ($op) got called for table = ${COS.table_name}, cases = ${COS.cases}")
 
-      if ((COS.cases == NOCASE || COS.cases == CASETHEN) || (columnOperation == COLCASE || columnOperation == COLWHEN ||
-        columnOperation == COLELSE || columnOperation == COLEND)) {
+      if ((COS.cases == NOCASE || COS.cases == CASETHEN) || (op == COLCASE || op == COLWHEN ||
+        op == COLELSE || op == COLEND)) {
         execute(())
       }
 
     } catch {
       case NonFatal(e) =>
-        logger.error(e, SIM.mpspath, s"COLOP/exec ($columnOperation) failed for table = ${COS.table_name})", true)
+        logger.error(e, SIM.mpspath, s"COLOP/exec ($op) failed for table = ${COS.table_name})", true)
     }
   }
 }

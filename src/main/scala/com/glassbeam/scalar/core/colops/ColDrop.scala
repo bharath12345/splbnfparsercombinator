@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core.colops
 
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -8,10 +8,10 @@ import scala.collection.immutable.Vector
 /**
   * Created by bharadwaj on 01/12/16.
   */
-class ColDrop(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColDrop(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLDROP(col1 [, coln])
     case COLDROP =>
       for (p <- colparam)

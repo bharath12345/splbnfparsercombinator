@@ -2,7 +2,7 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{Logger, StringValue}
 import com.glassbeam.scalar.core.parser.CASES._
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.utils.MatchUtils._
 
@@ -15,12 +15,12 @@ object ColWhen extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColWhen(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColWhen(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColWhen._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLWHEN =>
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
         throw new Exception(s"COLWHEN first parameter must be a column, l# $splline")

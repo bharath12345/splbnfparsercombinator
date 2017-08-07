@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core.colops
 
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger}
 import com.glassbeam.scalar.utils.MatchUtils._
@@ -15,12 +15,12 @@ object ColMap extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColMap(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColMap(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColMap._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLMAP(destCol, testCol. /pattern/, col1|literal1, col2|literal2)
     // if destCol matches pattern, take col1|literal1, else take col2|literal2
     case COLMAP =>

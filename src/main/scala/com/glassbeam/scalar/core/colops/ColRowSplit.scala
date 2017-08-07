@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{Logger, StringValue}
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -14,7 +14,7 @@ object ColRowSplit extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColRowSplit(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColRowSplit(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColRowSplit._
@@ -22,7 +22,7 @@ class ColRowSplit(colparam: Vector[ColumnParameter], op: String, param: String, 
   private var rowsplitOps = 0
   private var rowsplitIter: Iterator[String] = null
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case ROWSPLIT => // /pattern/, src-col
       if (colparam.size != 2 || !colparam(0).isInstanceOf[RegexColumnParameter] || !colparam(1).isInstanceOf[ColColumnParameter]) {
         throw new Exception(s"ROWSPLIT must have two parameters, a pattern and a column, l# $splline")

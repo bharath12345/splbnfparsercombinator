@@ -8,7 +8,7 @@ import java.util.{Calendar, Date, Random, TimeZone}
 
 import com.glassbeam.scalar.core.dateformat.DateFormats
 import com.glassbeam.scalar.core.parser.Funcs._
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter}
 import com.glassbeam.scalar.core.parser.NumberSystem
 import com.glassbeam.scalar.model._
@@ -27,7 +27,7 @@ object ColCalc extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) with NumberSystem with Constants {
 
   import ColCalc._
@@ -44,7 +44,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: String, param: String, spll
 
   private lazy val cal = Calendar.getInstance(TIMEZONE_UTC) // Instantiate once
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     // FN: ADJYEAR -- COLCALC(destCol, ADJYEAR, 'Apr', '2009', 'Dec')
     // FN: GMTIME
     // FN: LOCALTIME

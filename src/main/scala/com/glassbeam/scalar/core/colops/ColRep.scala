@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core.colops
 
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, RegexColumnParameter}
 import com.glassbeam.scalar.model._
 
@@ -13,12 +13,12 @@ object ColRep extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColRep(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColRep(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColRep._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     // COLREP(/pattern/, STRING, col)
     case COLREP => // /regex/, 'string', column
       if (!colparam(0).isInstanceOf[RegexColumnParameter]) {

@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.core.parser.CASES._
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.colops.ColOp.ColumnParameter
 import com.glassbeam.scalar.model.Logger
 
@@ -14,12 +14,12 @@ object ColCase extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColCase(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColCase(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColCase._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLCASE => exec
   }
 

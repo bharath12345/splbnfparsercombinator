@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{Logger, StringValue}
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -14,12 +14,12 @@ object ColLookupByName extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class ColLookupByName(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class ColLookupByName(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import ColLookupByName._
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case COLLOOKUPBYNAME =>
       if (!colparam.head.isInstanceOf[ColColumnParameter]) {
         throw new Exception("the lookup target is not defined as a column")

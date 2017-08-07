@@ -1,6 +1,8 @@
 package com.glassbeam.scalar.core.spl
 
-import com.glassbeam.scalar.core.parser.Ops.Ops
+import com.glassbeam.scalar.core.colops.ColOp
+import com.glassbeam.scalar.core.parser.ColumnOps.ColumnOps
+import com.glassbeam.scalar.core.parser.RowOps.RowOps
 import com.glassbeam.scalar.core.spl.lexer.Icons.Icons
 import com.glassbeam.scalar.core.spl.lexer.NamespaceType.NamespaceType
 
@@ -96,18 +98,17 @@ package object lexer {
     2. A colop takes a vector of ColumnParameter as input. ColumnParameter is a set of types: String, Numeric, Regex, Column and ColumnFunction
 
     What to do:
-    1. Dont bring ColOpFunction into this project
-    2. Table has a list of ColOpTrait's
-    3. ColOpTrait has to be brought in but not with SharedImmutables and ColOpSharables
+    2. Table has a list of ColOp's
+    3. ColOp has to be brought in but not with SharedImmutables and ColOpSharables
     4. Run the verification after creating of a ColOp object. And if the verify fails then throw exception
-    5. Since TableAST is made of list of ColOpTrait it has the execute() for things to work in the same old way
+    5. Since TableAST is made of list of ColOp it has the execute() for things to work in the same old way
 
     The ugly part is each ColOp creates all the operation objects - remove this by switching on columnOperation. Create only one object
    */
 
-  case class COLOP(colop: Ops, coloptext: String) extends SplTableToken
-  case class ROWOP(rowop: String, rowoptext: String) extends SplTableToken
-  case class COPCASEOP(op: Ops) extends SplTableToken
+  case class COLUMNOPERATION(override val op: ColumnOps, override val param: String, override val splline: Int) extends ColOp(op, param, splline)
+  case class ROWOPERATION(op: RowOps, param: String, splline: Int) // extends ColOp(op, param, splline)
+  case class COLCASEOPERATION(override val op: ColumnOps, override val splline: Int, override val param: String = null) extends ColOp(op, param, splline)
 
   sealed trait SplObjectToken extends SplToken
   case class OBJECT(name: String) extends SplObjectToken

@@ -2,7 +2,7 @@ package com.glassbeam.scalar.core.colops
 
 import com.glassbeam.scalar.model.{DataValue, EmptyValue, Logger}
 import com.glassbeam.scalar.core.parser.Funcs._
-import com.glassbeam.scalar.core.parser.Ops._
+import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, LongColumnParameter}
 
 import scala.collection.immutable.Vector
@@ -16,14 +16,14 @@ object RowDrop extends Logger {
   private final lazy val logger = Logging(this)
 }
 
-class RowDrop(colparam: Vector[ColumnParameter], op: String, param: String, splline: Int)
+class RowDrop(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, splline: Int)
   extends ColOpFunction(colparam, op, param, splline) {
 
   import RowDrop._
 
   var durationInDays : Long = 1825 // 5 years
 
-  def verify: PartialFunction[Ops, (SharedImmutables, ColOpSharables) => Unit] = {
+  def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit] = {
     case ROWDROP =>
       var func = InvalidFunc
       try {
