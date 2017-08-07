@@ -80,15 +80,7 @@ abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: ColumnOps, p
       case y: StringColumnParameter => Option(y.getValue.toString)
       case l: LongColumnParameter => Option(l.getValue.toString)
       case d: DoubleColumnParameter => Option(d.getValue.toString)
-      case z: ColColumnParameter =>
-        z.getValue match {
-          case sv: StringValue => Option(sv.value)
-          case lv: LongValue => Option(lv.value.toString)
-          case dv: DoubleValue => Option(dv.value.toString)
-          case bv: BooleanValue => Option(bv.value.toString)
-          case EmptyValue => None
-        }
-      case _ => None
+      case x => throw new Exception(s"value request from non literal column = $x")
     }
   }
 

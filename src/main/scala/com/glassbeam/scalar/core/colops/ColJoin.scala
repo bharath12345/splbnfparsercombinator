@@ -1,6 +1,6 @@
 package com.glassbeam.scalar.core.colops
 
-import com.glassbeam.scalar.model.StringValue
+import com.glassbeam.scalar.model.{DataValue, StringValue}
 import com.glassbeam.scalar.core.parser.ColumnOps._
 import com.glassbeam.scalar.core.colops.ColOp.{ColColumnParameter, ColumnParameter}
 
@@ -27,8 +27,13 @@ class ColJoin(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
       var value: String = ""
-      for {x <- colparam.tail; y <- ColString(x)}
+      for {x <- colparam.tail} {
+        val y = x match {
+          case ColColumnParameter(z) => DataValue.getStringValue(getColumnForCOLUMN(z, COS).getValue)
+          case k => ColString(k).get
+        }
         value += y
+      }
       val column = getColumnForCOLUMN(colparam.head.column, COS)
       column.setValue(StringValue(value))
   }
