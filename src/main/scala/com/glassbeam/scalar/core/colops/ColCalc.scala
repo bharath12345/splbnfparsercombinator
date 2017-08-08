@@ -162,7 +162,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
       func match {
         case STR2TIME =>
           try {
-            SIM.warning(s"STR2TIME logline=${SIM.lineno} NOT SUPPORTED -- use SDF2EPOCH")
+            logger.warning(s"STR2TIME logline=${SIM.lineno} NOT SUPPORTED -- use SDF2EPOCH")
             ColString(colparam(2)).foreach { value =>
               column.setValue(LongValue(dateFormat.parse(value)))
             }
@@ -225,7 +225,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           }
 
         case STR2MMYY => // Deprecated
-          SIM.warning(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2TIME & TIME2MONTH")
+          logger.warning(s"STR2MMYY($splline) NOT SUPPORTED -- use SDF2TIME & TIME2MONTH")
           try {
             ColString(colparam(2)).foreach { src =>
               val x = dateFormat.parse(src)
@@ -663,7 +663,7 @@ class ColCalc(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
           }
 
         case _ =>
-          SIM.warning(s"COLCALC function $func not yet implemented, l# $splline")
+          logger.warning(s"COLCALC function $func not yet implemented, l# $splline")
       }
   }
 }

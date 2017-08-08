@@ -31,7 +31,7 @@ class ColEnd(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, sp
         logger.debug(SM.mpspath, s"COLEND got Called, COS.cases=${COS.cases}")
       } else{
         COS.cases = NOCASE
-        SM.warning(s"COLEND without CASE, l# $splline")
+        logger.warning(s"COLEND without CASE, l# $splline")
       }
 
   }

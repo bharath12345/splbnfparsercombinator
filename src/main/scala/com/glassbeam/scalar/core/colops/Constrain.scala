@@ -18,7 +18,7 @@ class Constrain(colparam: Vector[ColumnParameter], op: ColumnOps, param: String,
 
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
-      for (c <- COS.cols; if c._2.persist && !COS.toConstrain)
+      for (c <- COS.dataColumns; if c._2.persist && !COS.toConstrain)
         COS.toConstrain = c._2.constrain
   }
 }

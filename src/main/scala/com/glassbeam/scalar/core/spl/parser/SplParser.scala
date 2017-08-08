@@ -175,7 +175,7 @@ object SplParser extends Parsers {
   }
 
   private def buildTableAST(tokens: Set[SplTokenSuperType]): TableAST = {
-    var ast: TableAST = TableAST(null, null, null, List(), None, None, None, None, None, None)
+    var ast: TableAST = TableAST(null, null, null, List(), List(), None, None, None, None, None, None)
     tokens.foreach {
       case SplTokenSuperType(x: TABLE, _) => ast = ast.copy(table = x)
       case SplTokenSuperType(x: ICON, _) => ast = ast.copy(icon = x)

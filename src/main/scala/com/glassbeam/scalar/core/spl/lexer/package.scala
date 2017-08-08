@@ -1,11 +1,12 @@
 package com.glassbeam.scalar.core.spl
 
-import com.glassbeam.scalar.core.colops.ColOp
+import com.glassbeam.scalar.core.colops.{ColOp, ColOpTrait}
 import com.glassbeam.scalar.core.parser.ColumnOps.ColumnOps
 import com.glassbeam.scalar.core.parser.RowOps.RowOps
 import com.glassbeam.scalar.core.spl.lexer.Icons.Icons
 import com.glassbeam.scalar.core.spl.lexer.NamespaceType.NamespaceType
 
+import scala.collection.immutable.List
 import scala.util.matching.Regex
 import scala.util.parsing.input.Positional
 
@@ -108,10 +109,14 @@ package object lexer {
        corresponding Column which has data. It can act on this. Since all Column's are present in ColOpSharables, AND ColOpSharables is
        part of execute's incoming arguments, this lookup can work
    */
-
-  case class COLUMNOPERATION(override val op: ColumnOps, override val param: String, override val splline: Int) extends ColOp(op, param, splline)
-  case class ROWOPERATION(op: RowOps, param: String, splline: Int) extends SplTableToken // extends ColOp(op, param, splline)
-  case class COLCASEOPERATION(override val op: ColumnOps, override val splline: Int, override val param: String = null) extends ColOp(op, param, splline)
+  abstract class ColumnOp(op: ColumnOps, param: String, splline: Int) extends SplTableToken {
+    def verify(columns: List[COLUMN]): Unit
+    def flush(): Unit
+    def exec(): Unit
+  }
+  case class COLUMNOPERATION(op: ColumnOps, param: String, splline: Int) extends ColumnOp(op, param, splline) with ColOpTrait
+  case class ROWOPERATION(op: RowOps, param: String, splline: Int) extends SplTableToken // extends ColumnOp(op, param, splline) with ColOpTrait
+  case class COLCASEOPERATION(op: ColumnOps, splline: Int, param: String = null) extends ColumnOp(op, param, splline) with ColOpTrait
 
   sealed trait SplObjectToken extends SplToken
   case class OBJECT(name: String) extends SplObjectToken

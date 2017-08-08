@@ -1,8 +1,9 @@
 package com.glassbeam.scalar.core.spl.lexer
 
 
-import com.glassbeam.scalar.core.parser.ColumnOps
+import com.glassbeam.scalar.core.parser.{ColumnOps, RowOps}
 import com.glassbeam.scalar.core.parser.ColumnOps.ColumnOps
+import com.glassbeam.scalar.core.parser.RowOps.RowOps
 
 import scala.util.matching.Regex
 
@@ -117,7 +118,7 @@ object ColOpLexer extends RegexLexer {
   override protected def get(values: String*): COLUMNOPERATION = {
     val value_list = values.toList
     val op: ColumnOps = ColumnOps.withName(value_list.head)
-    COLUMNOPERATION(op, value_list(1))
+    COLUMNOPERATION(op, value_list(1), value_list(2).toInt)
   }
 }
 
@@ -128,7 +129,8 @@ object RowOpLexer extends RegexLexer {
 
   override protected def get(values: String*): ROWOPERATION = {
     val value_list = values.toList
-    ROWOPERATION(value_list(0), value_list(1))
+    val op: RowOps = RowOps.withName(value_list.head)
+    ROWOPERATION(op, value_list(1), value_list(2).toInt)
   }
 }
 
@@ -137,5 +139,8 @@ object ColCaseOpsLexer extends RegexLexer {
 
   override protected val regex: Regex = """(COLCASE|COLELSE|COLEND)""".r
 
-  override protected def get(values: String*): COLCASEOPERATION = COLCASEOPERATION(ColumnOps.withName(values.head))
+  override protected def get(values: String*): COLCASEOPERATION = {
+    val value_list = values.toList
+    COLCASEOPERATION(ColumnOps.withName(values.head), value_list(1).toInt)
+  }
 }

@@ -26,7 +26,7 @@ class ColCase(colparam: Vector[ColumnParameter], op: ColumnOps, param: String, s
   private def exec: (SharedImmutables, ColOpSharables) => Unit = {
     (SM: SharedImmutables, COS: ColOpSharables) =>
       if (COS.cases > NOCASE) {
-        SM.warning(s"Embedded (COLCASE) not allowed , l# $splline")
+        logger.warning(s"Embedded (COLCASE) not allowed , l# $splline")
       } else {
         COS.cases = CASEWHEN
         logger.debug(SM.mpspath, s"COLCASE got Called, COS.cases=${COS.cases}")

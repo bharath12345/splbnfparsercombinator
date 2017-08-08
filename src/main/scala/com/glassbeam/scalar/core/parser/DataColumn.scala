@@ -8,14 +8,17 @@ import com.glassbeam.scalar.model.types.Spltable
 
 case class ActorRef()
 
-class Column(private val table_name: Spltable, private val position: Int, val column: COLUMN,
-             private val SIM: SharedImmutables, private val supervisor: ActorRef, var persist: Boolean = true,
-             private val splline: Int = 0) {
+class DataColumn(private val table_name: Spltable, private val position: Int, val column: COLUMN,
+                 private val SIM: SharedImmutables, private val supervisor: ActorRef, var persist: Boolean = true,
+                 private val splline: Int = 0) {
 
   var sess_count = 0
   val ddl = getDDL(column.ddl.get)
   val typ: ColumnType = ColumnType.get(column.column_name, ddl, splline)
   var len: Int = 0
+
+
+  def constrain: Boolean = false
 
   def getDDL(ddl: String): Option[(String, Int, String, String)] = None
 

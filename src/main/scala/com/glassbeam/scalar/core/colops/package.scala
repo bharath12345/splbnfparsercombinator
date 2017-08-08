@@ -1,6 +1,7 @@
 package com.glassbeam.scalar.core
 
-import com.glassbeam.scalar.core.parser.{CASES, Column}
+import com.glassbeam.scalar.core.parser.{CASES, DataColumn}
+import com.glassbeam.scalar.core.spl.lexer.COLUMN
 import com.glassbeam.scalar.model.{Logger, StartupConfig}
 import com.glassbeam.scalar.model.types.{Customer, Spltable}
 
@@ -27,17 +28,14 @@ package object colops extends Logger {
     lazy val (mfr, prod, sch) = mps
     lazy val mpspath = mfr + StartupConfig.filesep + prod + StartupConfig.filesep + sch
 
-    def fatal: String => Unit = logger.info
-    def error: String => Unit = logger.info
-    def warning: String => Unit = logger.info
-
     def lineno = 0
   }
 
 
   class ColOpSharables {
     // variables used in ColOp
-    var cols = new ListMap[String, Column]
+    var rawColumns = new ListMap[String, COLUMN]
+    var dataColumns = new ListMap[String, DataColumn]
     var cases = CASES.NOCASE
     var toConstrain = false
     var seenRowsplit = false

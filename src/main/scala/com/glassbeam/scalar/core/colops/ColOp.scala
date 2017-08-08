@@ -4,7 +4,7 @@ import com.glassbeam.scalar.core.parser.CASES._
 import com.glassbeam.scalar.core.parser.Funcs._
 import com.glassbeam.scalar.core.parser.ColumnOps._
 import ColOp.{ColColumnParameter, ColumnParameter, DoubleColumnParameter, LongColumnParameter, StringColumnParameter}
-import com.glassbeam.scalar.core.parser.{Column, Funcs}
+import com.glassbeam.scalar.core.parser.{DataColumn, Funcs}
 import com.glassbeam.scalar.core.spl.lexer.{COLUMN, SplTableToken}
 import com.glassbeam.scalar.model.ColumnType.ColumnType
 import com.glassbeam.scalar.model._
@@ -70,8 +70,8 @@ abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: ColumnOps, p
 
   def verify: PartialFunction[ColumnOps, (SharedImmutables, ColOpSharables) => Unit]
 
-  def getColumnForCOLUMN(incoming: COLUMN, COS: ColOpSharables): Column = {
-    COS.cols(incoming.column_name)
+  def getColumnForCOLUMN(incoming: COLUMN, COS: ColOpSharables): DataColumn = {
+    COS.dataColumns(incoming.column_name)
   }
 
   // ToDo: This whole function is UGLY and needs to be REMOVED
@@ -119,18 +119,21 @@ abstract class ColOpFunction(colparam: Vector[ColumnParameter], op: ColumnOps, p
     s"splline = ${splline}, op = $op, param = $param, table = ${COS.table_name}, column params = $colparam. ${exceptionMsg(e)}"
 }
 
-abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) extends SplTableToken {
+trait ColOpTrait {
 
   import ColOp._
 
-  var execute: (SharedImmutables, ColOpSharables) => Unit = null
+  val op: ColumnOps
+  val param: String
+  val splline: Int
+
+  private var execute: (SharedImmutables, ColOpSharables) => Unit = null
+  private var colparam = Vector.empty[ColumnParameter]
 
   def verify(columns: List[COLUMN]): Unit = {
-    var colparam = Vector.empty[ColumnParameter]
-
     def colParam(p: String) {
       if (p == null || p.isEmpty) {
-        SIM.fatal(s"COL parameter empty, l# $splline")
+        throw new Exception(s"COL parameter empty, l# $splline")
         colparam = colparam :+ StringColumnParameter(StringValue(""))
       } else if (p.head == '\'') {
         // 'literal'
@@ -145,26 +148,26 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
         if (p.last == '/')
           colparam = colparam :+ RegexColumnParameter(new Regex(stripQuotes(p)))
         else
-          SIM.fatal(s"SPL regexes do not take Perl modifiers $p, l# $splline")
+          throw new Exception(s"SPL regexes do not take Perl modifiers $p, l# $splline")
       } else if (p.head.isUpper) {
         // FUNC
         try {
           colparam = colparam :+ ColFuncColumnParameter(Funcs.withName(p))
         } catch {
           case e: java.util.NoSuchElementException =>
-            SIM.error(s"Unknown COLCALC function: $p, l# $splline")
+            throw new Exception(s"Unknown COLCALC function: $p, l# $splline")
         }
       } else if (p.head.isLower) {
         // column
-        COS.cols.get(p) match {
+        COS.rawColumns.get(p) match {
           case Some(c) =>
             colparam = colparam :+ ColColumnParameter(c)
           case None =>
-            SIM.fatal(s"COL parameter: column $p not found, l# $splline")
+            throw new Exception(s"COL parameter: column $p not found, l# $splline")
             dumpCols
         }
       } else {
-        SIM.fatal(s"COL parameter ($p) does not match Literal/Numeric/Pattern/Func/Column, l# $splline")
+        throw new Exception(s"COL parameter ($p) does not match Literal/Numeric/Pattern/Func/Column, l# $splline")
       }
     }
 
@@ -215,12 +218,12 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
   }
 
   private def dumpCols {
-    if (COS.cols.size < 1)
+    if (COS.dataColumns.size < 1)
       logger.error(SIM.mpspath, "No Columns", true)
     else {
-      var Cols: String = COS.cols.head._1
-      if (COS.cols.size > 1)
-        for (c <- COS.cols.tail)
+      var Cols: String = COS.dataColumns.head._1
+      if (COS.dataColumns.size > 1)
+        for (c <- COS.dataColumns.tail)
           Cols += ", " + c._1
       logger.debug(SIM.mpspath, s"Columns: $Cols")
     }
@@ -261,7 +264,8 @@ abstract class ColOp(val op: ColumnOps, val param: String, val splline: Int) ext
   def flush(): Unit = {
     op match {
       case COLCOUNT => //sess_count = 0 For each Session
-        val column: Column = colparam(2).column
+        val column_name = colparam(2).column.column_name
+        val column: DataColumn = COS.dataColumns(column_name)
         column.sess_count = 0
         column.setValue(LongValue(column.sess_count))
       case _ =>
