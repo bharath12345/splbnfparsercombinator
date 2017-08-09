@@ -1,7 +1,7 @@
 package com.glassbeam.scalar.core.parser
 
-import com.glassbeam.scalar.core.colops.SharedImmutables
-import com.glassbeam.scalar.core.spl.lexer.COLUMN
+import com.glassbeam.scalar.core.parser.colops.SharedImmutables
+import com.glassbeam.scalar.core.parser.spl.lexer.COLUMN
 import com.glassbeam.scalar.model.ColumnType.ColumnType
 import com.glassbeam.scalar.model.{ColumnType, DataValue, EmptyValue}
 import com.glassbeam.scalar.model.types.Spltable
